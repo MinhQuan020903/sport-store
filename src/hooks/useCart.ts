@@ -3,30 +3,37 @@
 import { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSession } from 'next-auth/react';
-// import { User } from '@/models';
-import { getRequest } from '@/lib/fetch';
-//dispatch, selector
+import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+
+// Import redux actions
 import {
   addToCart,
   increaseItemFromCart,
   decreaseItemFromCart,
   deleteItemFromCart,
 } from '@/redux/cart/cart';
-import toast from 'react-hot-toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+
+// Replace with your external API URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export const useCart = () => {
-  // Lay session cua user
   const { data: session } = useSession();
   const dispatch = useDispatch();
   const reduxCart = useSelector((state: any) => state.cart) || null;
+  const queryClient = useQueryClient();
 
+  // Modified to fetch from external API
   const fetchUserCart = async (userId) => {
-    const userShoppingCart = await getRequest({
-      endPoint: `/api/user/cart/cart-item?userId=${userId}`,
-    });
-    return userShoppingCart;
+    if (!userId) return null;
+    try {
+      const response = await axios.get(`${API_BASE_URL}/cart/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+      return null;
+    }
   };
 
   const {
@@ -39,11 +46,13 @@ export const useCart = () => {
     enabled: !!session,
   });
 
-  const convertToReduxCart = (prismaCart) => {
-    const listItem = prismaCart.cartItems.map((item) => ({
+  // Convert API response to Redux format
+  const convertToReduxCart = (apiCart) => {
+    // Adjust this conversion function based on your API response structure
+    const listItem = apiCart.cartItems.map((item) => ({
       data: item.product,
       quantity: item.quantity,
-      selectedSize: item.selectedSize, // Cần cung cấp thông tin này từ Prisma nếu có
+      selectedSize: item.selectedSize,
     }));
 
     const total = listItem.reduce(
@@ -67,23 +76,19 @@ export const useCart = () => {
       : null
     : reduxCart;
 
-  const queryClient = useQueryClient();
-
-  // useEffect(() => {
-  //   queryClient.removeQueries(['cartQuery']);
-  // }, [session]);
-
+  // Add to cart mutation
   const addToCartMutationFn = async ({ data, selectedSize, quantity }) => {
     const response = await axios.post(
-      `/api/user/cart/cart-item?userId=${session?.user.id}`,
+      `${API_BASE_URL}/cart/${session?.user.id}`,
       {
-        ...data,
+        productId: data.id,
         selectedSize: selectedSize,
         quantity: quantity,
       },
       {
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
         },
       }
     );
@@ -92,13 +97,13 @@ export const useCart = () => {
       throw new Error('Failed to add to cart');
     }
 
-    /// Trường hợp out of stock
     if (response.status === 201) {
       toast.error(response.data.message);
     }
 
     return response.data;
   };
+
   const addToCartMutation = useMutation({
     mutationKey: ['onAddToCart'],
     mutationFn: addToCartMutationFn,
@@ -114,11 +119,11 @@ export const useCart = () => {
       }
     },
   });
+
   const onAddToCart = ({ data, selectedSize, quantity }) => {
     if (session) {
       try {
         addToCartMutation.mutate({ data, selectedSize, quantity });
-        console.log('So luong them', quantity);
       } catch (error) {
         console.error(error);
       }
@@ -127,24 +132,19 @@ export const useCart = () => {
     }
   };
 
+  // Update cart mutation
   const updateCartMutationFn = async ({ data, selectedSize, quantity }) => {
-    console.log(
-      '🚀 ~ file: useCart.ts:126 ~ updateCartMutationFn ~ data:',
-      data,
-      selectedSize,
-      quantity
-    );
-
     const response = await axios.put(
-      `/api/user/cart/cart-item?userId=${session?.user.id}`,
+      `${API_BASE_URL}/cart/${session?.user.id}`,
       {
-        ...data,
+        productId: data.id,
         selectedSize: selectedSize,
         quantity: quantity,
       },
       {
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
         },
       }
     );
@@ -153,13 +153,13 @@ export const useCart = () => {
       throw new Error('Failed to update cart');
     }
 
-    /// Trường hợp out of stock
     if (response.status === 201) {
       toast.success(response.data.message);
     }
 
     return response.data;
   };
+
   const updateCartMutation = useMutation(updateCartMutationFn, {
     onError: (error) => {
       console.error(error);
@@ -172,40 +172,46 @@ export const useCart = () => {
       }
     },
   });
+
   const onUpdateCart = ({ data, selectedSize, quantity }) => {
     if (session) {
       updateCartMutation.mutate({ data, selectedSize, quantity });
-      console.log('So luong them', quantity);
-    } else {
-      console.log('So luong them', quantity);
     }
   };
 
-  const onIncreaseItemFromCart = useCallback(async ({ data, selectedSize }) => {
-    if (session) {
-      try {
-        // const user = session?.user as User;
-        addToCartMutation.mutate({ data, selectedSize, quantity: 1 });
-      } catch (error) {
-        console.error(error);
+  // Increase item in cart
+  const onIncreaseItemFromCart = useCallback(
+    ({ data, selectedSize }) => {
+      if (session) {
+        try {
+          addToCartMutation.mutate({ data, selectedSize, quantity: 1 });
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        dispatch(increaseItemFromCart({ data, selectedSize }));
       }
-    } else {
-      dispatch(increaseItemFromCart({ data, selectedSize }));
-    }
-  }, []);
+    },
+    [session, dispatch, addToCartMutation]
+  );
 
-  const onDecreaseItemFromCart = useCallback(async ({ data, selectedSize }) => {
-    if (session) {
-      try {
-        addToCartMutation.mutate({ data, selectedSize, quantity: -1 });
-      } catch (error) {
-        console.error(error);
+  // Decrease item in cart
+  const onDecreaseItemFromCart = useCallback(
+    ({ data, selectedSize }) => {
+      if (session) {
+        try {
+          addToCartMutation.mutate({ data, selectedSize, quantity: -1 });
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        dispatch(decreaseItemFromCart({ data, selectedSize }));
       }
-    } else {
-      dispatch(decreaseItemFromCart({ data, selectedSize }));
-    }
-  }, []);
+    },
+    [session, dispatch, addToCartMutation]
+  );
 
+  // Delete item from cart
   const deleteItemFromCartMutation = useMutation<
     any,
     Error,
@@ -213,15 +219,16 @@ export const useCart = () => {
   >(
     async ({ data, selectedSize, quantity }) => {
       const response = await axios.delete(
-        `/api/user/cart/cart-item?userId=${session?.user.id}`,
+        `${API_BASE_URL}/cart/${session?.user.id}`,
         {
           data: {
-            ...data,
+            productId: data.id,
             selectedSize: selectedSize,
             quantity: quantity,
           },
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
           },
         }
       );
@@ -263,21 +270,10 @@ export const useCart = () => {
           },
         }
       );
-      console.log('Da xoa', data);
     } else {
       dispatch(deleteItemFromCart({ data, selectedSize, quantity }));
     }
   };
-
-  // const onGetUserWishList = async (userId) => {
-  //   const userWishList = await getRequest({
-  //     endPoint: `/api/user/wishlist?userId=${userId}`,
-  //   });
-  //   if (userWishList) {
-  //     console.log('userWishList', userWishList.products);
-  //   }
-  //   return userWishList;
-  // };
 
   return {
     onAddToCart,
@@ -291,5 +287,3 @@ export const useCart = () => {
     successAdded: addToCartMutation.isSuccess,
   };
 };
-
-//trong hook se return functions va state global

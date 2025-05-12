@@ -5,7 +5,6 @@ import { Montserrat } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { QueryProvider } from '@/components/providers/query-provider';
 import AuthProvider from '../../context/AuthProvider';
-import { Web3Provider } from '@/components/providers/web3-provider';
 import { ChainProvider } from '@/components/providers/chain-provider';
 import UniqueIdProvider from '@/components/providers/unique-id-provider';
 
@@ -35,14 +34,12 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <ChainProvider>
           <AuthProvider>
             <UniqueIdProvider>
-              <Web3Provider>
-                <ReduxProvider>
-                  <QueryProvider>
-                    <Toaster />
-                    {children}
-                  </QueryProvider>
-                </ReduxProvider>
-              </Web3Provider>
+              <ReduxProvider>
+                <QueryProvider>
+                  <Toaster />
+                  {children}
+                </QueryProvider>
+              </ReduxProvider>
             </UniqueIdProvider>
           </AuthProvider>
         </ChainProvider>
