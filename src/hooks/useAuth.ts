@@ -6,23 +6,6 @@ import { signIn } from 'next-auth/react';
 export const useAuth = () => {
   const router = useRouter();
 
-  const onRegister1 = async (data, callback) => {
-    const response = await postRequest({
-      endPoint: '/api/auth/register',
-      formData: data,
-      isFormData: false,
-    });
-    callback?.();
-
-    if (response?.message === 'User already exists') {
-      toast.error(response.message);
-    }
-    if (response?.message === 'User created') {
-      toast.success(response.message);
-      router.push('/auth/login');
-    }
-  };
-
   const onRegister = async (data, callback) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
@@ -97,12 +80,120 @@ export const useAuth = () => {
     console.log('🚀 ~ file: useAuth.ts:97 ~ onGetUserDetail ~ user:', user);
     return user;
   };
+
+  const onLogin = async (data, callback) => {
+    try {
+      console.log('Login data:', data);
+      const response = await postRequest({
+        endPoint: '/api/Auth/login',
+        formData: {
+          email: data.email,
+          password: data.password,
+        },
+        isFormData: false,
+      });
+
+      callback?.();
+
+      if (response?.error) {
+        toast.error(response.error);
+        return { success: false };
+      }
+
+      if (response?.requiresPincode) {
+        // Return flag indicating pincode verification needed
+        return { requiresPincode: true, email: data.email };
+      }
+
+      // Check if we received user data in the expected format (with username, token, etc.)
+      if (response && response?.username && response.token) {
+        // Sign in with credentials and include the user data
+        const signInResult = await signIn('credentials', {
+          email: data.email,
+          redirect: false,
+          userData: JSON.stringify(response), // Pass the complete user data to be used in the session
+        });
+
+        if (signInResult?.error) {
+          console.error('Sign in error:', signInResult.error);
+          toast.error(signInResult.error);
+          return { success: false };
+        }
+
+        toast.success('Login successful');
+        router.push('/');
+        return { success: true, user: response };
+      }
+
+      // Fallback to regular credentials sign in if no user data in response
+      const signInResult = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        toast.error(signInResult.error);
+        return { success: false };
+      }
+
+      router.push('/');
+      return { success: true };
+    } catch (error) {
+      callback?.();
+      toast.error('Login failed');
+      return { success: false };
+    }
+  };
+
+  const onVerifyLoginPincode = async (email, pincode) => {
+    try {
+      const response = await postRequest({
+        endPoint: '/api/auth/login/verify',
+        formData: {
+          email,
+          pincode,
+        },
+        isFormData: false,
+      });
+
+      if (response?.error) {
+        return { success: false, message: response.error };
+      }
+
+      // Sign in with credentials after pincode verification
+      const signInResult = await signIn('credentials', {
+        email,
+        password: response.password, // The backend might send back a temporary password or token
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        return { success: false, message: signInResult.error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: 'Verification failed' };
+    }
+  };
+
+  const onResendLoginPincode = async (email) => {
+    return await postRequest({
+      endPoint: '/api/auth/login/resend-pincode',
+      formData: { email },
+      isFormData: false,
+    });
+  };
+
   return {
     onRegister,
-    onRegister1,
     onSendAgain,
     onVerifyOtp,
     onFirstSend,
     onGetUserDetail,
+    onLogin,
+    onVerifyLoginPincode,
+    onResendLoginPincode,
   };
 };

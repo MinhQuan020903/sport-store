@@ -1,8 +1,5 @@
 import { AuthOptions } from 'next-auth';
-import DiscordProvider from 'next-auth/providers/discord';
-import GithubProvider from 'next-auth/providers/github';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 const options: AuthOptions = {
@@ -12,99 +9,34 @@ const options: AuthOptions = {
     strategy: 'jwt',
   },
   providers: [
-    DiscordProvider({
-      clientId: String(process.env.DISCORD_CLIENT_ID),
-      clientSecret: String(process.env.DISCORD_CLIENT_SECRET),
-      async profile(profile) {
-        console.log('profile in discord: ', profile);
-        //cai profile nay se truyen xuong jwt function
-        const user = await prisma.user.findUnique({
-          where: {
-            email: profile.email,
-          },
-        });
-        if (!user)
-          return {
-            name: profile.username,
-            email: profile.email,
-            id: -1,
-          };
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-          role: user.role,
-          isVerified: user.isEmailVerified,
-        };
-      },
-    }),
-
-    GithubProvider({
-      clientId: String(process.env.GITHUB_CLIENT_ID),
-      clientSecret: String(process.env.GITHUB_CLIENT_SECRET),
-      async profile(profile) {
-        console.log('inside prfileeeeeeeeeeeeeee');
-        //cai profile nay se truyen xuong jwt function
-        const user = await prisma.user.findUnique({
-          where: {
-            email: profile.email,
-          },
-        });
-        if (!user)
-          return {
-            name: profile.name,
-            email: profile.email,
-            id: -1,
-          };
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-          role: user.role,
-          isVerified: user.isEmailVerified,
-        };
-      },
-    }),
-    GoogleProvider({
-      clientId: String(process.env.GOOGLE_CLIENT_ID),
-      clientSecret: String(process.env.GOOGLE_CLIENT_SECRET),
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
-      async profile(profile) {
-        console.log('inside prfileeeeeeeeeeeeeee');
-        //cai profile nay se truyen xuong jwt function
-        const user = await prisma.user.findUnique({
-          where: {
-            email: profile.email,
-          },
-        });
-        if (!user)
-          return {
-            name: profile.name,
-            email: profile.email,
-            id: -1,
-          };
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-          role: user.role,
-          isVerified: user.isEmailVerified,
-        };
-      },
-    }),
-
     CredentialsProvider({
       name: 'Credentials',
       async authorize(credentials) {
+        // Check if userData is provided (from the API response)
+        if (credentials.userData) {
+          try {
+            // Parse the userData JSON string into an object
+            const userData = JSON.parse(credentials.userData as string);
+
+            // Return the user data directly without database lookup
+            return {
+              id: userData.id,
+              name: userData.username,
+              email: userData.email,
+              role: userData.roles?.[0] || 'User',
+              avatar: userData.photoUrl,
+              isVerified: true, // Assuming user is verified if they successfully logged in
+              // Pass through other data that might be needed in session
+              token: userData.token,
+              photos: userData.photos,
+            };
+          } catch (error) {
+            console.error('Error parsing userData:', error);
+            throw new Error('Invalid user data format');
+          }
+        }
+
+        // Fall back to traditional email/password validation if no userData
         const { email, password } = credentials as {
           email: string;
           password: string;
@@ -136,8 +68,6 @@ const options: AuthOptions = {
 
   callbacks: {
     async signIn(params) {
-      console.log('paramssssssssssssssssssssssssssssssssssssssssssssss: ');
-      console.log(params);
       if (!params?.user?.id || parseInt(params?.user?.id) === -1) {
         const payload = jwt.sign(
           { email: params?.user?.email, name: params?.user?.name },
@@ -151,8 +81,6 @@ const options: AuthOptions = {
     },
     //first it run the jwt function, the jwt function will return the token , then in the session function we can access the token
     async jwt({ token, user, trigger, session }) {
-      console.log('🚀 ~ file: options.ts:154 ~ jwt ~ user:', user);
-      console.log('🚀 ~ file: options.ts:154 ~ jwt ~ token:', token);
       if (trigger === 'update') {
         return { ...token, ...session.user };
       }
@@ -175,7 +103,6 @@ const options: AuthOptions = {
       //     redirectTo: `/auth/login?email=${session?.user.email}&name=${session?.user.name}`,
       //   };
       // }
-      console.log('token in sessionnnnnnnnnnnnnnnnn: ', token);
       if (session.user) {
         (session.user as { id: string }).id = token.id as string;
         (session.user as { name: string }).name = token.name as string;

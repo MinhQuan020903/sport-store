@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.object({
   email: z.string().min(1, {
@@ -32,12 +33,14 @@ const formSchema = z.object({
     message: 'Password is required',
   }),
 });
+
 const Login = ({ className }: { className?: string; providers: unknown }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [show, setShow] = React.useState({
     showPass: false,
   });
+  const { onLogin } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,28 +49,24 @@ const Login = ({ className }: { className?: string; providers: unknown }) => {
       password: '',
     },
   });
+
   async function onSubmit(data) {
-    console.log(data);
-
     setIsLoading(true);
-    const res = await signIn('credentials', {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
-    setIsLoading(false);
+    try {
+      const result = await onLogin(data, () => {
+        setIsLoading(false);
+      });
 
-    if (res?.error) {
-      toast.error(res?.error);
-
-      return;
+      if (result?.requiresPincode) {
+        // Redirect to pincode verification page
+        router.push(`/auth/pincode?email=${encodeURIComponent(data.email)}`);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      toast.error('Login failed');
     }
-
-    console.log(res);
-    if (!res?.error) router.refresh();
-    setIsLoading(false);
-    console.log(res);
   }
+
   if (isLoading)
     return (
       <div className="w-full flex flex-col items-center justify-center">
@@ -146,7 +145,7 @@ const Login = ({ className }: { className?: string; providers: unknown }) => {
           </form>
         </Form>
 
-        <div className="relative">
+        {/* <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
@@ -196,7 +195,7 @@ const Login = ({ className }: { className?: string; providers: unknown }) => {
             </div>{' '}
             Google
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <p className="mt-10 px-8 text-center text-sm text-muted-foreground">
