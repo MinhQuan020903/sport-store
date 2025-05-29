@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -14,15 +14,30 @@ import {
   decreaseItemFromCart,
   deleteItemFromCart,
 } from '@/redux/cart/cart';
+import {
+  generateMockCartItems,
+  mockUser,
+  fetchProductById,
+} from '@/mocks/productData';
+
+import { CartItem } from '@/types';
 
 // Replace with your external API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+interface Cart {
+  userId: string;
+  listItem: CartItem[];
+}
 
 export const useCart = () => {
   const { data: session } = useSession();
   const dispatch = useDispatch();
   const reduxCart = useSelector((state: any) => state.cart) || null;
   const queryClient = useQueryClient();
+
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Modified to fetch from external API
   const fetchUserCart = async (userId) => {
@@ -68,15 +83,27 @@ export const useCart = () => {
     };
   };
 
-  const cart = session
-    ? isLoading
-      ? null
-      : userCart
-      ? convertToReduxCart(userCart)
-      : null
-    : reduxCart;
+  useEffect(() => {
+    const fetchCart = async () => {
+      setLoading(true);
+      try {
+        const mockCartItems = await generateMockCartItems();
 
-  // Add to cart mutation
+        // Create a mock cart with the items
+        setCart({
+          userId: mockUser.id,
+          listItem: mockCartItems,
+        });
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
   const addToCartMutationFn = async ({ data, selectedSize, quantity }) => {
     const response = await axios.post(
       `${API_BASE_URL}/cart/${session?.user.id}`,
@@ -285,5 +312,6 @@ export const useCart = () => {
     onUpdateCart,
     isAddingToCart: addToCartMutation.isLoading,
     successAdded: addToCartMutation.isSuccess,
+    loading,
   };
 };
