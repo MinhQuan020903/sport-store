@@ -28,10 +28,7 @@ export function CartSheet() {
   const { cart } = useCart();
   const [itemCount, setItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
-  console.log(
-    '🚀 ~ file: CartSheet.tsx:31 ~ CartSheet ~ cartTotal:',
-    cartTotal
-  );
+
   const [checkedItems, setCheckedItems] = useState({});
   // const queryClient = useQueryClient();
 
@@ -39,7 +36,7 @@ export function CartSheet() {
     // Update số lượng sản phẩm trong giỏ và các sản phẩm có trong giỏ
     const updateCartSheet = async () => {
       setItemCount(
-        cart?.listItem.reduce((total, item) => total + item.quantity, 0)
+        cart?.listItem.reduce((total, item) => total + item.quantity, 0) || 0
       );
 
       setCartTotal(
@@ -47,8 +44,8 @@ export function CartSheet() {
           ? Object.values(checkedItems).reduce(
               (
                 sum: number,
-                item: { data: { price: number }; quantity: number }
-              ) => sum + (item?.data.price * item?.quantity || 0),
+                item: { product: { price: number }; quantity: number }
+              ) => sum + (item?.product.price * item?.quantity || 0),
               0
             )
           : 0
@@ -56,7 +53,7 @@ export function CartSheet() {
     };
 
     updateCartSheet();
-  }, [cart?.listItem]);
+  }, [cart?.listItem, checkedItems]);
 
   return (
     <Sheet>
