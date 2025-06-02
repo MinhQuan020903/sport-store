@@ -7,16 +7,8 @@ import AddProductDialog from '../../(home)/AddProductDialog';
 
 async function page({ params }) {
   const { slug } = params;
-  const { onGetProductDetail } = useProduct();
-  // const productDetail = await fetch(
-  //   `${process.env.API_HOST}/api/product/detail?productId=${slug}`,
-  //   {
-  //     cache: 'no-cache',
-  //   }
-  // );
-  // const data = await productDetail?.json();
-  // console.log(data);
-  const res = await onGetProductDetail(slug);
+  const { onGetProductById } = useProduct();
+  const res = await onGetProductById(slug);
 
   const data = res;
   return (
