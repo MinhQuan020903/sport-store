@@ -1,122 +1,160 @@
 import { getRequest } from '@/lib/fetch';
+import { postRequest, putRequest, deleteRequest } from '@/lib/fetch';
 import { type z } from 'zod';
-import prisma from '@/lib/prisma';
-import type { getProductsSchema } from '@/lib/validations/product';
+import {
+  productSchema,
+  updateProductSchema,
+  getProductsSchema,
+  type GetProductsParams,
+} from '@/lib/validations/product';
+
+// Backend API parameter types for better type safety
+export type ProductQueryParams = {
+  PageNumber?: number;
+  PageSize?: number;
+  Name?: string;
+  Category?: string;
+  MinPrice?: number;
+  MaxPrice?: number;
+  OrderBy?: string;
+  SortBy?: string;
+};
+
+// Map frontend params to backend params
+const mapToApiParams = (params?: GetProductsParams): ProductQueryParams => {
+  if (!params) return {};
+
+  return {
+    PageNumber: params.page,
+    PageSize: params.limit,
+    Name: params.search,
+    Category: params.categoryId,
+    MinPrice: params.minPrice,
+    MaxPrice: params.maxPrice,
+    OrderBy: params.sortBy,
+    SortBy: params.sortOrder,
+  };
+};
 
 export const useProduct = () => {
-  const onGetProductDetail = async (slug) => {
-    const productDetail = await getRequest({
-      endPoint: `/api/product/detail?productId=${slug}`,
-    });
-    // const data = await productDetail?.json();
+  // Get all products with pagination and filters
+  const onGetProducts = async (params?: GetProductsParams) => {
+    const apiParams = mapToApiParams(params);
+    const queryString = new URLSearchParams(
+      Object.entries(apiParams)
+        .filter(([_, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)])
+    ).toString();
 
-    return productDetail;
+    const response = await getRequest({
+      endPoint: `/api/product${queryString ? `?${queryString}` : ''}`,
+    });
+    return response;
   };
 
-  const getProductsAction = async (
-    input: z.infer<typeof getProductsSchema>
+  // Get a single product by ID
+  const onGetProductById = async (id: string) => {
+    const response = await getRequest({
+      endPoint: `/api/product/${id}`,
+    });
+    return response;
+  };
+
+  // Create a new product
+  const onCreateProduct = async (
+    productData: z.infer<typeof productSchema>
   ) => {
-    const { sort, price_range, categories, subcategories, limit, offset } =
-      input;
-
-    const [column, order] =
-      (sort?.split('.') as [keyof Product, 'asc' | 'desc']) || [];
-    const [minPrice, maxPrice] = price_range?.split('-')?.map(Number) || [0, 0];
-    const categoriesArray = categories?.split('.') || [];
-    const subcategoriesArray = subcategories?.split('.') || [];
-
-    const where = {
-      AND: [
-        categoriesArray.length
-          ? { categoryId: { in: categoriesArray } }
-          : undefined,
-        subcategoriesArray.length
-          ? { subcategory: { in: subcategoriesArray } }
-          : undefined,
-        minPrice ? { price: { gte: minPrice } } : undefined,
-        maxPrice ? { price: { lte: maxPrice } } : undefined,
-      ].filter(Boolean),
-    };
-
-    const items = await prisma.product.findMany({
-      where,
-      orderBy: {
-        [column || 'id']: order || 'desc',
-      },
-      take: limit,
-      skip: offset,
-    });
-
-    const count = await prisma.product.count({
-      where,
-    });
-
-    return {
-      items,
-      count,
-    };
-  };
-
-  const fetchProduct = async ({
-    page,
-    q,
-    sort,
-    gender,
-    categories,
-    subcategories,
-    price_range,
-  } = {}) => {
-    const params = {
-      page,
-      q,
-      sort,
-      gender,
-      categories,
-      subcategories,
-      price_range,
-    };
-
-    // Construct the base endpoint
-    let endpoint = 'api/product/search?limit=8';
-
-    // Add parameters to the endpoint
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== null && value !== undefined) {
-        endpoint += `&${key}=${value}`;
-      }
+    const validation = productSchema.safeParse(productData);
+    if (!validation.success) {
+      throw new Error(
+        'Validation failed: ' + JSON.stringify(validation.error.format())
+      );
     }
 
-    // Make the API request
-    const products = await getRequest({ endPoint: endpoint });
-
-    // Handle the response and return the necessary data
-    console.log(products);
-    return {
-      data: products.data,
-      totalPages: Math.round(products.totalPages),
-      totalItems: products.totalItems,
-      page: products.page,
-    };
+    const response = await postRequest({
+      endPoint: '/api/product',
+      formData: productData,
+      isFormData: false,
+    });
+    return response;
   };
 
-  const onGetProductDetailFromOrder = async (id) => {
-    try {
-      const res = await getRequest({
-        endPoint: `api/product/detail?productId=${id}`,
-      });
-      console.log(res);
-      if (res) {
-        return res;
-      }
-    } catch (e) {
-      console.log(e);
+  // Update an existing product
+  const onUpdateProduct = async (
+    id: string,
+    productData: z.infer<typeof updateProductSchema>
+  ) => {
+    const validation = updateProductSchema.partial().safeParse(productData);
+    if (!validation.success) {
+      throw new Error(
+        'Validation failed: ' + JSON.stringify(validation.error.format())
+      );
     }
+
+    const response = await putRequest({
+      endPoint: `/api/product/${id}`,
+      formData: productData,
+      isFormData: false,
+    });
+    return response;
+  };
+
+  // Delete a product
+  const onDeleteProduct = async (id: string) => {
+    const response = await deleteRequest({
+      endPoint: `/api/product/${id}`,
+    });
+    return response;
+  };
+
+  // Get photos for a product
+  const onGetProductPhotos = async (productId: string) => {
+    const response = await getRequest({
+      endPoint: `/api/product/${productId}/photos`,
+    });
+    return response;
+  };
+
+  // Add a photo to a product
+  const onAddProductPhoto = async (productId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await postRequest({
+      endPoint: `/api/product/${productId}/photos`,
+      formData,
+      isFormData: true,
+    });
+    return response;
+  };
+
+  // Set a photo as the main photo
+  const onSetMainProductPhoto = async (productId: string, photoId: string) => {
+    const response = await putRequest({
+      endPoint: `/api/product/${productId}/photos/${photoId}/set-main`,
+      formData: {},
+      isFormData: false,
+    });
+    return response;
+  };
+
+  // Delete a photo
+  const onDeleteProductPhoto = async (productId: string, photoId: string) => {
+    const response = await deleteRequest({
+      endPoint: `/api/product/${productId}/photos/${photoId}`,
+    });
+    return response;
   };
 
   return {
-    onGetProductDetail,
-    getProductsAction,
-    fetchProduct,
-    onGetProductDetailFromOrder,
+    onGetProducts,
+    onDeleteProductPhoto,
+    onSetMainProductPhoto,
+    onAddProductPhoto,
+    onGetProductPhotos,
+    onDeleteProduct,
+    onUpdateProduct,
+    onCreateProduct,
+    onGetProductById,
   };
 };

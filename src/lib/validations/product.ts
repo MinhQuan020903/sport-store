@@ -1,71 +1,54 @@
-import * as z from 'zod';
+import { z } from 'zod';
 
-// export const productSchema = z.object({
-//   name: z.string().min(1, {
-//     message: "Must be at least 1 character",
-//   }),
-//   description: z.string().optional(),
-//   category: z
-//     .enum(products.category.enumValues, {
-//       required_error: "Must be a valid category",
-//     })
-//     .default(products.category.enumValues[0]),
-//   subcategory: z.string().optional().nullable(),
-//   price: z.string().regex(/^\d+(\.\d{1,2})?$/, {
-//     message: "Must be a valid price",
-//   }),
-//   inventory: z.number(),
-//   images: z
-//     .unknown()
-//     .refine((val) => {
-//       if (!Array.isArray(val)) return false
-//       if (val.some((file) => !(file instanceof File))) return false
-//       return true
-//     }, "Must be an array of File")
-//     .optional()
-//     .nullable()
-//     .default(null),
-// })
-
-export const filterProductsSchema = z.object({
-  query: z.string(),
+// Schema for product photos
+export const productPhotoSchema = z.object({
+  id: z.string().uuid().optional(), // Optional for creation
+  url: z.string().url(),
+  publicId: z.string().optional().nullable(),
+  isMain: z.boolean().default(false),
+  productId: z.string().uuid().optional(), // Optional for creation
+  userId: z.string().uuid().optional().nullable(),
 });
 
-export const getProductSchema = z.object({
-  id: z.number(),
-  storeId: z.number(),
+// Schema for product categories
+export const productCategorySchema = z.object({
+  categoryId: z.string().uuid(),
+  productId: z.string().uuid().optional(), // Optional for creation
 });
 
-export const getProductInventorySchema = z.object({
-  id: z.number(),
+// Schema for creating a new product
+export const productSchema = z.object({
+  name: z.string().min(1, 'Product name is required'),
+  description: z.string().min(1, 'Description is required'),
+  price: z.number().positive('Price must be positive'),
+  inStock: z.number().int().nonnegative('Stock cannot be negative'),
+  photos: z.array(productPhotoSchema).optional().default([]),
+  categories: z.array(productCategorySchema).optional().default([]),
 });
 
+// Schema for updating an existing product
+export const updateProductSchema = productSchema.partial().extend({
+  id: z.string().uuid(),
+});
+
+// Schema for querying products
 export const getProductsSchema = z.object({
-  limit: z.number().default(10),
-  offset: z.number().default(0),
-  categories: z
-    .string()
-    .regex(/^\d+.\d+$/)
+  page: z.number().int().positive().optional().default(1),
+  limit: z.number().int().positive().optional().default(10),
+  sortBy: z
+    .enum(['name', 'price', 'createdAt'])
     .optional()
-    .nullable(),
-  subcategories: z
-    .string()
-    .regex(/^\d+.\d+$/)
-    .optional()
-    .nullable(),
-  sort: z
-    .string()
-    .regex(/^\w+.(asc|desc)$/)
-    .optional()
-    .nullable(),
-  price_range: z
-    .string()
-    .regex(/^\d+-\d+$/)
-    .optional()
-    .nullable(),
-  store_ids: z
-    .string()
-    .regex(/^\d+.\d+$/)
-    .optional()
-    .nullable(),
+    .default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  categoryId: z.string().uuid().optional(),
+  minPrice: z.number().nonnegative().optional(),
+  maxPrice: z.number().positive().optional(),
+  search: z.string().optional(),
 });
+
+// Type definitions for TypeScript
+export type ProductPhoto = z.infer<typeof productPhotoSchema>;
+export type ProductCategory = z.infer<typeof productCategorySchema>;
+export type Product = z.infer<typeof productSchema>;
+export type UpdateProduct = z.infer<typeof updateProductSchema>;
+export type GetProductsParams = z.infer<typeof getProductsSchema>;

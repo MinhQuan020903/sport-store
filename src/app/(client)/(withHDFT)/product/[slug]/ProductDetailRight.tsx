@@ -8,21 +8,56 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { currencyFormat, parseJSON } from '@/lib/utils';
+import { currencyFormat } from '@/lib/utils';
 import React, { useState } from 'react';
 import { IoMdHeartEmpty } from 'react-icons/io';
 import { BsFillCheckCircleFill } from 'react-icons/bs';
+import { FiMinus, FiPlus } from 'react-icons/fi';
 import Image from 'next/image';
 import { useCart } from '@/hooks/useCart';
 import { useSelectedProduct } from '@/hooks/useSelectedProduct';
 
 function ProductDetailRight({ data }) {
-  const [selectedSize, setSizeSelected] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [showError, setShowError] = useState(false);
   const { cart } = useCart();
-  const { onSelectProduct, onToggleDialog } = useSelectedProduct();
+  const { onSelectProduct } = useSelectedProduct();
 
-  console.log(cart);
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      setShowError(true);
+      document.getElementById('sizesGrid')?.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth',
+      });
+      return;
+    }
+
+    // Add product to cart with selected size and quantity
+    onSelectProduct({
+      data: {
+        ...data,
+        selectedSize,
+        quantity,
+      },
+    });
+    // onToggleDialog();
+  };
+
+  const increaseQuantity = () => {
+    const selectedSizeObj = data.sizes.find((s) => s.size === selectedSize);
+    if (selectedSizeObj && quantity < selectedSizeObj.quantity) {
+      setQuantity((prev) => prev + 1);
+    }
+  };
+
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
+  };
+
   return (
     <div className="flex-[1] py-3">
       {/* Product Title */}
@@ -31,55 +66,42 @@ function ProductDetailRight({ data }) {
       </div>
 
       {/* Product Subtitle */}
-      <div className="text-lg font-semibold mb-5">{data.subtitle}</div>
+      <div className="text-lg font-semibold mb-5">{data.description}</div>
 
       {/* Product Price */}
       <div className="text-lg font-semibold ">{currencyFormat(data.price)}</div>
 
-      {data.original_price && (
-        <div>
-          <p className="text-base font-medium line-through ">
-            {currencyFormat(data.original_price)}
-          </p>
-          <p className="ml-auto text-base font-medium text-green-500">
-            {' '}
-            17% off
-          </p>
-        </div>
-      )}
-
       {/* Product size */}
-
-      <div className="mb-10">
+      <div className="mb-10 mt-5">
         {/* Heading */}
         <div className="flex justify-between mb-2">
           <div className="text-md font-semibold">Chọn kích cỡ</div>
-          <div className="text-md font-medium text-black/[0.5] cursor pointer">
+          <div className="text-md font-medium text-black/[0.5] cursor-pointer">
             Kích cỡ
           </div>
         </div>
-        {/* Heading */}
 
         {/* Size start */}
         <div id="sizesGrid" className="grid grid-cols-3 gap-2">
-          {parseJSON(data.sizes)?.map((size, index) => (
+          {data.sizes?.map((size, index) => (
             <div
               onClick={
-                size.number > 0
+                size.quantity > 0
                   ? () => {
-                      setSizeSelected(size.size);
+                      setSelectedSize(size.size);
                       setShowError(false);
+                      setQuantity(1); // Reset quantity when changing size
                     }
                   : () => {}
               }
               key={index}
               className={`border-2 rounded-md text-center py-2.5 font-medium
-    hover:bg-slate-300 
-      cursor-pointer ${
-        size.number > 0
-          ? 'hover:border-black cursor-pointer'
-          : 'cursor-not-allowed disabled bg-black/[0.1] opacity-50'
-      } ${selectedSize === size.size ? 'border-black' : ''} `}
+                hover:bg-slate-300 
+                cursor-pointer ${
+                  size.quantity > 0
+                    ? 'hover:border-black cursor-pointer'
+                    : 'cursor-not-allowed disabled bg-black/[0.1] opacity-50'
+                } ${selectedSize === size.size ? 'border-black' : ''} `}
             >
               {size.size}
             </div>
@@ -93,21 +115,59 @@ function ProductDetailRight({ data }) {
             Vui lòng chọn kích cỡ sản phẩm
           </div>
         )}
-        {/* Show error */}
       </div>
+
+      {/* Quantity selector - only show when size is selected */}
+      {selectedSize && (
+        <div className="mb-5">
+          <div className="text-md font-semibold mb-2">Số lượng</div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={decreaseQuantity}
+              className="w-8 h-8 flex items-center justify-center border rounded-full"
+              disabled={quantity <= 1}
+            >
+              <FiMinus
+                className={quantity <= 1 ? 'text-gray-300' : 'text-black'}
+              />
+            </button>
+            <span className="text-lg font-medium">{quantity}</span>
+            <button
+              onClick={increaseQuantity}
+              className="w-8 h-8 flex items-center justify-center border rounded-full"
+              disabled={
+                quantity >=
+                (data.sizes.find((s) => s.size === selectedSize)?.quantity || 0)
+              }
+            >
+              <FiPlus
+                className={
+                  quantity >=
+                  (data.sizes.find((s) => s.size === selectedSize)?.quantity ||
+                    0)
+                    ? 'text-gray-300'
+                    : 'text-black'
+                }
+              />
+            </button>
+            <span className="text-sm text-gray-500 ml-2">
+              Còn{' '}
+              {data.sizes.find((s) => s.size === selectedSize)?.quantity || 0}{' '}
+              sản phẩm
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2 w-full items-center justify-center">
-        {/* Product size */}
-        {!selectedSize ? (
+        {/* Add to cart button */}
+        <div className="w-full flex">
           <Sheet>
-            <SheetTrigger className="w-full mx-0 flex items-center justify-center  ">
+            <SheetTrigger className="w-full mx-0 flex items-center justify-center">
               <Button
                 className="w-full py-4 rounded-full bg-black text-white text-lg
-                  font-medium transition-transform active:scale-95 mb-3 hover:opacity-75
-                  "
-                onClick={() => {
-                  onSelectProduct({ data: data });
-                  onToggleDialog();
-                }}
+                  font-medium transition-transform active:scale-95 mb-3 hover:opacity-75"
+                onClick={handleAddToCart}
               >
                 Thêm vào giỏ hàng
               </Button>
@@ -121,14 +181,11 @@ function ProductDetailRight({ data }) {
                   />
                   <SheetTitle>Đã thêm vào giỏ hàng!</SheetTitle>
                 </div>
-                <div className=" flex flex-row gap-4 w-full">
+                <div className="flex flex-row gap-4 w-full">
                   <div className="relative aspect-square h-24 w-16 min-w-fit overflow-hidden rounded">
                     <Image
                       alt="add to cart"
-                      src={
-                        parseJSON(data?.thumbnail)?.url ||
-                        '/assets/placeholder.png'
-                      }
+                      src={data.mainPhotoUrl || '/assets/placeholder.png'}
                       sizes="(max-width: '768px') 100vw, (max-width: 1200px) 50vw, 33vw"
                       fill
                       className="absolute object-cover"
@@ -136,70 +193,39 @@ function ProductDetailRight({ data }) {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span
-                      className="text-black text-sm
-        font-medium"
-                    >
+                    <span className="text-black text-sm font-medium">
                       {data.name}
                     </span>
-                    <span
-                      className="text-black text-sm
-        font-normal"
-                    >
-                      Giày
+                    <span className="text-black text-sm font-normal">Giày</span>
+                    <span className="text-black text-sm font-normal">
+                      Size: {selectedSize}
                     </span>
-                    <span
-                      className="text-black text-sm
-        font-normal"
-                    >
-                      {selectedSize}
+                    <span className="text-black text-sm font-normal">
+                      Số lượng: {quantity}
                     </span>
-
-                    <span
-                      className="text-black text-sm
-        font-medium"
-                    >
-                      {currencyFormat(data.price)}
+                    <span className="text-black text-sm font-medium">
+                      {currencyFormat(data.price * quantity)}
                     </span>
                   </div>
                 </div>
-                <div className="flex-row flex w-full py-3">
-                  <Button variant={'outline'} className="w-full ">
+                <div className="flex-row flex w-full py-3 gap-2">
+                  <Button variant={'outline'} className="w-full">
                     Xem giỏ hàng ({cart?.listItem.length})
                   </Button>
-
                   <Button className="w-full">Thanh toán</Button>
                 </div>
               </SheetHeader>
             </SheetContent>
           </Sheet>
-        ) : (
-          <div className="w-full flex ">
-            <Button
-              className="w-full py-4  rounded-full bg-black text-white text-lg
-        font-medium transition-transform active:scale-95 mb-3 hover:opacity-75
-        "
-              onClick={() => {
-                if (!selectedSize) {
-                  setShowError(true);
-                  document.getElementById('sizesGrid')?.scrollIntoView({
-                    block: 'center',
-                    behavior: 'smooth',
-                  });
-                }
-              }}
-            >
-              Thêm vào giỏ hàng
-            </Button>
-          </div>
-        )}
-        <div className="w-full flex ">
+        </div>
+
+        {/* Favorites button */}
+        <div className="w-full flex">
           <Button
             variant={'outline'}
             className="w-full py-4 rounded-full border border-black
-        text-lg font-medium transition-transform active:scale-95 flex items-center
-        justify-center gap-2 hover:opacity-75 mb-10
-                "
+              text-lg font-medium transition-transform active:scale-95 flex items-center
+              justify-center gap-2 hover:opacity-75 mb-10"
           >
             Yêu thích
             <IoMdHeartEmpty size={20} />
