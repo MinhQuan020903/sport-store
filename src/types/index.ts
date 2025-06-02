@@ -18,17 +18,6 @@ export interface ProductPhoto {
   productId: string;
 }
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  inStock: number;
-  createdAt: string;
-  updatedAt: string;
-  photos: ProductPhoto[];
-}
-
 export interface Category {
   id: string;
   name: string;
@@ -39,12 +28,33 @@ export interface Category {
   updatedAt: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  inStock: number;
+  createdAt: string;
+  updatedAt: string;
+  mainPhotoUrl: string;
+  photos: ProductPhoto[];
+  categories: Category[];
+  sizes: Size[];
+}
 export interface ProductCategory {
   productId: string;
   categoryId: string;
   createdAt: string;
 }
 
+export interface Size {
+  id: string;
+  size: string;
+  quantity: number;
+  productId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface User {
   id: string;
   name: string;
