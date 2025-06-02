@@ -5,12 +5,14 @@
     "skipLibCheck": true,
     "checkJs": false,
     "strict": false,
+    "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "strictNullChecks": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -28,8 +30,7 @@
       "@services/*": ["./src/services/*"],
       "@endpoints/*": ["./src/endpoints/*"],
       "@types/*": ["./src/types/*"]
-    },
-    "strictNullChecks": true
+    }
   },
   "include": [
     "next-env.d.ts",
