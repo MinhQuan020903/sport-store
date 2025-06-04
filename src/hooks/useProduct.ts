@@ -47,7 +47,7 @@ export const useProduct = () => {
     ).toString();
 
     const response = await getRequest({
-      endPoint: `/api/product${queryString ? `?${queryString}` : ''}`,
+      endPoint: `/api/products${queryString ? `?${queryString}` : ''}`,
     });
     return response;
   };
@@ -55,7 +55,7 @@ export const useProduct = () => {
   // Get a single product by ID
   const onGetProductById = async (id: string) => {
     const response = await getRequest({
-      endPoint: `/api/product/${id}`,
+      endPoint: `/api/products/${id}`,
     });
     return response;
   };
@@ -72,7 +72,7 @@ export const useProduct = () => {
     }
 
     const response = await postRequest({
-      endPoint: '/api/product',
+      endPoint: '/api/products',
       formData: productData,
       isFormData: false,
     });
@@ -92,7 +92,7 @@ export const useProduct = () => {
     }
 
     const response = await putRequest({
-      endPoint: `/api/product/${id}`,
+      endPoint: `/api/products/${id}`,
       formData: productData,
       isFormData: false,
     });
@@ -102,7 +102,7 @@ export const useProduct = () => {
   // Delete a product
   const onDeleteProduct = async (id: string) => {
     const response = await deleteRequest({
-      endPoint: `/api/product/${id}`,
+      endPoint: `/api/products/${id}`,
     });
     return response;
   };
@@ -110,7 +110,7 @@ export const useProduct = () => {
   // Get photos for a product
   const onGetProductPhotos = async (productId: string) => {
     const response = await getRequest({
-      endPoint: `/api/product/${productId}/photos`,
+      endPoint: `/api/products/${productId}/photos`,
     });
     return response;
   };
@@ -121,7 +121,7 @@ export const useProduct = () => {
     formData.append('file', file);
 
     const response = await postRequest({
-      endPoint: `/api/product/${productId}/photos`,
+      endPoint: `/api/products/${productId}/photos`,
       formData,
       isFormData: true,
     });
@@ -131,7 +131,7 @@ export const useProduct = () => {
   // Set a photo as the main photo
   const onSetMainProductPhoto = async (productId: string, photoId: string) => {
     const response = await putRequest({
-      endPoint: `/api/product/${productId}/photos/${photoId}/set-main`,
+      endPoint: `/api/products/${productId}/photos/${photoId}/set-main`,
       formData: {},
       isFormData: false,
     });
@@ -141,7 +141,7 @@ export const useProduct = () => {
   // Delete a photo
   const onDeleteProductPhoto = async (productId: string, photoId: string) => {
     const response = await deleteRequest({
-      endPoint: `/api/product/${productId}/photos/${photoId}`,
+      endPoint: `/api/products/${productId}/photos/${photoId}`,
     });
     return response;
   };

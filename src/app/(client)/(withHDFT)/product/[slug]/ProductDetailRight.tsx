@@ -21,8 +21,9 @@ function ProductDetailRight({ data }) {
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [showError, setShowError] = useState(false);
-  const { cart } = useCart();
+  const { cart, onAddToCart } = useCart();
   const { onSelectProduct } = useSelectedProduct();
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -34,6 +35,8 @@ function ProductDetailRight({ data }) {
       return;
     }
 
+    setIsAdding(true);
+
     // Add product to cart with selected size and quantity
     onSelectProduct({
       data: {
@@ -42,7 +45,15 @@ function ProductDetailRight({ data }) {
         quantity,
       },
     });
-    // onToggleDialog();
+
+    // Send the product to backend cart using useCart hook
+    onAddToCart({
+      data,
+      selectedSize,
+      quantity,
+    });
+
+    setIsAdding(false);
   };
 
   const increaseQuantity = () => {
@@ -168,8 +179,9 @@ function ProductDetailRight({ data }) {
                 className="w-full py-4 rounded-full bg-black text-white text-lg
                   font-medium transition-transform active:scale-95 mb-3 hover:opacity-75"
                 onClick={handleAddToCart}
+                disabled={isAdding}
               >
-                Thêm vào giỏ hàng
+                {isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
               </Button>
             </SheetTrigger>
             <SheetContent side={'topRight'} className="w-[400px]">
@@ -210,7 +222,7 @@ function ProductDetailRight({ data }) {
                 </div>
                 <div className="flex-row flex w-full py-3 gap-2">
                   <Button variant={'outline'} className="w-full">
-                    Xem giỏ hàng ({cart?.listItem.length})
+                    Xem giỏ hàng ({cart?.listItem?.length || 0})
                   </Button>
                   <Button className="w-full">Thanh toán</Button>
                 </div>

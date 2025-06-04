@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 
 import { Select, SelectItem } from '@nextui-org/react';
-import { Web3Checkout } from './childComponents/Web3Checkout';
 import { StripeCheckout } from './childComponents/StripeCheckout';
 import VnPayCheckout from './childComponents/VnPayCheckout';
 
@@ -66,7 +65,6 @@ export const PaymentForm = ({
           total={total}
         />
       )}
-      {method === 'Block chain Wallet' && <Web3Checkout />}
       {method === 'VnPay' && (
         <VnPayCheckout checkedItems={checkedItems} total={total} />
       )}

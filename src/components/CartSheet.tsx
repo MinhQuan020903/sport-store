@@ -27,17 +27,21 @@ import { useEffect, useState } from 'react';
 export function CartSheet() {
   const { cart } = useCart();
   const [itemCount, setItemCount] = useState(0);
+  const [uniqueItemCount, setUniqueItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
 
   const [checkedItems, setCheckedItems] = useState({});
-  // const queryClient = useQueryClient();
 
   useEffect(() => {
     // Update số lượng sản phẩm trong giỏ và các sản phẩm có trong giỏ
     const updateCartSheet = async () => {
+      // Count total quantity (sum of all item quantities)
       setItemCount(
         cart?.listItem.reduce((total, item) => total + item.quantity, 0) || 0
       );
+
+      // Count unique product types (each product counts as 1 regardless of quantity)
+      setUniqueItemCount(cart?.listItem.length || 0);
 
       setCartTotal(
         Object.keys(checkedItems).length > 0
@@ -64,12 +68,12 @@ export function CartSheet() {
           size="icon"
           className="relative"
         >
-          {itemCount > 0 && (
+          {uniqueItemCount > 0 && (
             <Badge
               variant="secondary"
               className="absolute -right-2 -top-2 h-6 w-6 justify-center rounded-full p-2.5"
             >
-              {itemCount}
+              {uniqueItemCount}
             </Badge>
           )}
           {CommonSvg.cart({ className: 'h-4 w-4' })}
@@ -77,12 +81,14 @@ export function CartSheet() {
       </SheetTrigger>
       <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
         <SheetHeader className="px-1">
-          <SheetTitle>Giỏ hàng {itemCount > 0 && `(${itemCount})`}</SheetTitle>
+          <SheetTitle>
+            Giỏ hàng {uniqueItemCount > 0 && `(${uniqueItemCount})`}
+          </SheetTitle>
         </SheetHeader>
         <div className="pr-6">
           <Separator />
         </div>
-        {itemCount > 0 ? (
+        {uniqueItemCount > 0 ? (
           <>
             <div className="flex flex-1 flex-col gap-5 overflow-hidden">
               <CartLineItems
@@ -93,24 +99,8 @@ export function CartSheet() {
               />
             </div>
             <div className="grid gap-1.5 pr-6 text-sm">
-              {/* <Separator className="mb-2" />
-              <div className="flex">
-                <span className="flex-1">Subtotal</span>
-                <span>{currencyFormat(cartTotal)}</span>
-              </div>
-              <div className="flex">
-                <span className="flex-1">Shipping</span>
-                <span>Free</span>
-              </div>
-              <div className="flex">
-                <span className="flex-1">Taxes</span>
-                <span>Calculated at checkout</span>
-              </div> */}
               <Separator className="mt-2" />
-              {/* <div className="flex">
-                <span className="flex-1">Total</span>
-                <span>{currencyFormat(cartTotal)}</span>
-              </div> */}
+
               <SheetFooter className="mt-1.5">
                 <SheetTrigger asChild>
                   <Link
