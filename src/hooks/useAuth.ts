@@ -1,7 +1,8 @@
 import { getRequest, postRequest, putRequest } from '@/lib/fetch';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { signIn } from 'next-auth/react';
+import { signIn, signOut } from 'next-auth/react';
+import Cookies from 'js-cookie';
 
 export const useAuth = () => {
   const router = useRouter();
@@ -120,6 +121,8 @@ export const useAuth = () => {
           return { success: false };
         }
 
+        //Set cookie for the token
+        document.cookie = `access_token=${response.token}; path=/;`; // Set cookie for 1 hour
         toast.success('Login successful');
         router.push('/');
         return { success: true, user: response };
@@ -186,6 +189,28 @@ export const useAuth = () => {
     });
   };
 
+  const onLogout = async () => {
+    try {
+      // 1. Clear the access_token cookie
+      Cookies.remove('access_token');
+
+      // 2. Sign out from NextAuth session
+      await signOut({ redirect: false });
+
+      // 3. Show success message
+      toast.success('Logged out successfully');
+
+      // 4. Redirect to home page
+      router.push('/');
+
+      return { success: true };
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out');
+      return { success: false };
+    }
+  };
+
   return {
     onRegister,
     onSendAgain,
@@ -195,5 +220,6 @@ export const useAuth = () => {
     onLogin,
     onVerifyLoginPincode,
     onResendLoginPincode,
+    onLogout,
   };
 };
