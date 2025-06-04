@@ -65,7 +65,11 @@ export interface User {
 export interface CartItem {
   userId: string;
   productId: string;
+  productName?: string;
+  productPrice?: number;
+  productPhotoUrl?: string;
   quantity: number;
+  selectedSize?: string;
   createdAt: string;
   updatedAt: string;
   // Include the product data for UI display purposes
