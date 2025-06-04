@@ -59,6 +59,7 @@
     "ethers": "^5.7.2",
     "framer-motion": "^10.16.4",
     "husky": "^8.0.3",
+    "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.279.0",
@@ -105,6 +106,7 @@
     "zustand": "^4.4.3"
   },
   "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/redux-logger": "^3.0.9",
     "@types/redux-persist": "^4.3.1",

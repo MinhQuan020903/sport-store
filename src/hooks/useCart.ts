@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 // Import redux actions
 import {
@@ -13,37 +14,63 @@ import {
   increaseItemFromCart,
   decreaseItemFromCart,
   deleteItemFromCart,
+  clearCart,
 } from '@/redux/cart/cart';
-import {
-  generateMockCartItems,
-  mockUser,
-  fetchProductById,
-} from '@/mocks/productData';
 
 import { CartItem } from '@/types';
 
-// Replace with your external API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// DTOs matching the backend
+interface CreateCartItemDto {
+  productId: string; // Guid in C# maps to string in TS
+  quantity: number;
+}
+
+interface UpdateCartItemDto {
+  quantity: number;
+}
 
 interface Cart {
   userId: string;
   listItem: CartItem[];
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_HOST || '';
+
 export const useCart = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const dispatch = useDispatch();
   const reduxCart = useSelector((state: any) => state.cart) || null;
   const queryClient = useQueryClient();
 
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // Modified to fetch from external API
-  const fetchUserCart = async (userId) => {
-    if (!userId) return null;
+  // Get auth headers for authenticated requests - now using cookies directly
+  const getAuthHeaders = () => {
+    // Try to get token from cookie first, then fallback to session
+    const tokenFromCookie = Cookies.get('access_token');
+    const token = tokenFromCookie || session?.accessToken;
+
+    if (!token) {
+      console.warn('No authentication token found');
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
+  // Check if user is authenticated
+  const isAuthenticated =
+    status === 'authenticated' || !!Cookies.get('access_token');
+
+  // Fetch cart items from API
+  const fetchUserCart = async () => {
+    if (!isAuthenticated) return null;
     try {
-      const response = await axios.get(`${API_BASE_URL}/cart/${userId}`);
+      const response = await axios.get(`${API_URL}/api/CartItems`, {
+        headers: getAuthHeaders(),
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -57,14 +84,15 @@ export const useCart = () => {
     isLoading,
   } = useQuery({
     queryKey: ['useCart'],
-    queryFn: () => fetchUserCart(session?.user.id),
-    enabled: !!session,
+    queryFn: fetchUserCart,
+    enabled: isAuthenticated,
   });
 
   // Convert API response to Redux format
   const convertToReduxCart = (apiCart) => {
-    // Adjust this conversion function based on your API response structure
-    const listItem = apiCart.cartItems.map((item) => ({
+    if (!apiCart) return null;
+
+    const listItem = apiCart.map((item) => ({
       data: item.product,
       quantity: item.quantity,
       selectedSize: item.selectedSize,
@@ -83,49 +111,26 @@ export const useCart = () => {
     };
   };
 
-  useEffect(() => {
-    const fetchCart = async () => {
-      setLoading(true);
-      try {
-        const mockCartItems = await generateMockCartItems();
-
-        // Create a mock cart with the items
-        setCart({
-          userId: mockUser.id,
-          listItem: mockCartItems,
-        });
-      } catch (error) {
-        console.error('Error fetching cart:', error);
-      } finally {
-        setLoading(false);
-      }
+  // Add to cart - matches POST /api/CartItems
+  const addToCartMutationFn = async ({ data, selectedSize, quantity }) => {
+    const createCartItemDto: CreateCartItemDto = {
+      productId: data.id,
+      quantity: quantity,
     };
 
-    fetchCart();
-  }, []);
-
-  const addToCartMutationFn = async ({ data, selectedSize, quantity }) => {
     const response = await axios.post(
-      `${API_BASE_URL}/cart/${session?.user.id}`,
-      {
-        productId: data.id,
-        selectedSize: selectedSize,
-        quantity: quantity,
-      },
+      `${API_URL}/api/CartItems`,
+      createCartItemDto,
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
+          ...getAuthHeaders(),
         },
       }
     );
 
-    if (response.status !== 200 && response.status !== 201) {
+    if (response.status !== 201) {
       throw new Error('Failed to add to cart');
-    }
-
-    if (response.status === 201) {
-      toast.error(response.data.message);
     }
 
     return response.data;
@@ -136,11 +141,13 @@ export const useCart = () => {
     mutationFn: addToCartMutationFn,
     onError: (error) => {
       console.error(error);
+      toast.error('Failed to add item to cart');
     },
     onSettled: (data, error) => {
       if (error) {
         console.error('Mutation failed with error:', error);
       } else {
+        toast.success('Item added to cart');
         queryClient.refetchQueries(['useCart']);
         queryClient.removeQueries(['cartQuery']);
       }
@@ -148,7 +155,7 @@ export const useCart = () => {
   });
 
   const onAddToCart = ({ data, selectedSize, quantity }) => {
-    if (session) {
+    if (isAuthenticated) {
       try {
         addToCartMutation.mutate({ data, selectedSize, quantity });
       } catch (error) {
@@ -159,29 +166,25 @@ export const useCart = () => {
     }
   };
 
-  // Update cart mutation
+  // Update cart - matches PUT /api/CartItems/{productId}
   const updateCartMutationFn = async ({ data, selectedSize, quantity }) => {
+    const updateCartItemDto: UpdateCartItemDto = {
+      quantity: quantity,
+    };
+
     const response = await axios.put(
-      `${API_BASE_URL}/cart/${session?.user.id}`,
-      {
-        productId: data.id,
-        selectedSize: selectedSize,
-        quantity: quantity,
-      },
+      `${API_URL}/api/CartItems/${data.id}`,
+      updateCartItemDto,
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
+          ...getAuthHeaders(),
         },
       }
     );
 
-    if (response.status < 200 || response.status >= 300) {
+    if (response.status !== 200) {
       throw new Error('Failed to update cart');
-    }
-
-    if (response.status === 201) {
-      toast.success(response.data.message);
     }
 
     return response.data;
@@ -190,73 +193,116 @@ export const useCart = () => {
   const updateCartMutation = useMutation(updateCartMutationFn, {
     onError: (error) => {
       console.error(error);
+      toast.error('Failed to update cart');
     },
     onSettled: (data, error) => {
       if (error) {
         console.error('Mutation failed with error:', error);
       } else {
+        toast.success('Cart updated successfully');
         queryClient.refetchQueries(['useCart']);
       }
     },
   });
 
   const onUpdateCart = ({ data, selectedSize, quantity }) => {
-    if (session) {
+    if (isAuthenticated) {
       updateCartMutation.mutate({ data, selectedSize, quantity });
     }
   };
 
-  // Increase item in cart
+  // Increase item in cart - uses the update endpoint
   const onIncreaseItemFromCart = useCallback(
     ({ data, selectedSize }) => {
-      if (session) {
+      if (isAuthenticated) {
         try {
-          addToCartMutation.mutate({ data, selectedSize, quantity: 1 });
+          // First get current quantity, then increase it
+          let currentItem;
+
+          // Handle different cart item formats
+          if (userCart) {
+            // API response format has items with product field
+            currentItem = userCart.find((item) => item.productId === data.id);
+          }
+
+          const currentQuantity = currentItem?.quantity || 0;
+
+          console.log('Increasing item quantity:', {
+            itemId: data.id,
+            currentQuantity,
+            newQuantity: currentQuantity + 1,
+          });
+
+          // Call the PUT API endpoint to update quantity
+          updateCartMutation.mutate({
+            data,
+            selectedSize,
+            quantity: currentQuantity + 1,
+          });
         } catch (error) {
-          console.error(error);
+          console.error('Error increasing cart item:', error);
         }
       } else {
         dispatch(increaseItemFromCart({ data, selectedSize }));
       }
     },
-    [session, dispatch, addToCartMutation]
+    [isAuthenticated, dispatch, updateCartMutation, userCart]
   );
 
-  // Decrease item in cart
+  // Decrease item in cart - uses the update endpoint
   const onDecreaseItemFromCart = useCallback(
     ({ data, selectedSize }) => {
-      if (session) {
+      if (isAuthenticated) {
         try {
-          addToCartMutation.mutate({ data, selectedSize, quantity: -1 });
+          // First get current quantity, then decrease it
+          let currentItem;
+
+          // Handle different cart item formats
+          if (userCart) {
+            // API response format has items with product field
+            currentItem = userCart.find((item) => item.productId === data.id);
+          }
+
+          const currentQuantity = currentItem?.quantity || 0;
+
+          console.log('Decreasing item quantity:', {
+            itemId: data.id,
+            currentQuantity,
+            newQuantity: currentQuantity - 1,
+          });
+
+          if (currentQuantity <= 1) {
+            // If quantity would become 0, remove the item instead
+            onDeleteItemFromCart({ data, selectedSize, quantity: 1 });
+          } else {
+            // Call the PUT API endpoint to update quantity
+            updateCartMutation.mutate({
+              data,
+              selectedSize,
+              quantity: currentQuantity - 1,
+            });
+          }
         } catch (error) {
-          console.error(error);
+          console.error('Error decreasing cart item:', error);
         }
       } else {
         dispatch(decreaseItemFromCart({ data, selectedSize }));
       }
     },
-    [session, dispatch, addToCartMutation]
+    [isAuthenticated, dispatch, updateCartMutation, userCart]
   );
 
-  // Delete item from cart
+  // Delete item from cart - matches DELETE /api/CartItems/{productId}
   const deleteItemFromCartMutation = useMutation<
     any,
     Error,
     { data: any; selectedSize: any; quantity: any }
   >(
-    async ({ data, selectedSize, quantity }) => {
+    async ({ data }) => {
       const response = await axios.delete(
-        `${API_BASE_URL}/cart/${session?.user.id}`,
+        `${API_URL}/api/CartItems/${data.id}`,
         {
-          data: {
-            productId: data.id,
-            selectedSize: selectedSize,
-            quantity: quantity,
-          },
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.accessToken}`, // Add if your API requires auth
-          },
+          headers: getAuthHeaders(),
         }
       );
 
@@ -269,6 +315,7 @@ export const useCart = () => {
     {
       onError: (error) => {
         console.error(error);
+        toast.error('Failed to remove item from cart');
       },
     }
   );
@@ -282,11 +329,12 @@ export const useCart = () => {
     selectedSize: any;
     quantity: any;
   }) => {
-    if (session) {
+    if (isAuthenticated) {
       deleteItemFromCartMutation.mutate(
         { data, selectedSize, quantity },
         {
           onSuccess: () => {
+            toast.success('Item removed from cart');
             queryClient.refetchQueries(['useCart']);
             queryClient.removeQueries(['cartQuery']);
           },
@@ -302,16 +350,61 @@ export const useCart = () => {
     }
   };
 
+  // Clear cart - matches DELETE /api/CartItems
+  const clearCartMutation = useMutation(
+    async () => {
+      const response = await axios.delete(`${API_URL}/api/CartItems`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.status !== 200) {
+        throw new Error('Failed to clear cart');
+      }
+
+      return response.data;
+    },
+    {
+      onError: (error) => {
+        console.error(error);
+        toast.error('Failed to clear cart');
+      },
+      onSuccess: () => {
+        toast.success('Cart cleared successfully');
+        queryClient.refetchQueries(['useCart']);
+        queryClient.removeQueries(['cartQuery']);
+      },
+    }
+  );
+
+  const onClearCart = () => {
+    if (isAuthenticated) {
+      clearCartMutation.mutate();
+    } else {
+      dispatch(clearCart());
+    }
+  };
+
+  // For non-authenticated users, use the Redux store cart
+  // For authenticated users, use the API cart data
+  const userId = session?.user?.id || Cookies.get('userId');
+  const currentCart = isAuthenticated
+    ? { userId: userId || 'guest', listItem: userCart || [] }
+    : reduxCart;
+
   return {
     onAddToCart,
     onIncreaseItemFromCart,
     onDecreaseItemFromCart,
     onDeleteItemFromCart,
-    cart,
+    onClearCart,
+    clearCart: clearCartMutation.mutate,
+    updateCart: updateCartMutation.mutate,
+    cart: currentCart,
     refetch,
     onUpdateCart,
     isAddingToCart: addToCartMutation.isLoading,
     successAdded: addToCartMutation.isSuccess,
-    loading,
+    loading: isLoading || loading,
+    isAuthenticated,
   };
 };

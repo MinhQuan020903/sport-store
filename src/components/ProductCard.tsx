@@ -19,7 +19,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  console.log('Rendering ProductCard for:', product);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isAddToCart, setIsAddToCart] = useState<boolean>(false);
   const [isShowDialog, setIsShowDialog] = useState<boolean>(false);
