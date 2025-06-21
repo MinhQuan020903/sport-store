@@ -215,7 +215,9 @@ function ProductDetailRight({ data }) {
                     </span>
                     <span className="text-black text-sm font-normal">Giày</span>
                     <span className="text-black text-sm font-normal">
-                      Size: {selectedSize}
+                      Size:{' '}
+                      {data.sizes.find((s) => s.id === selectedSize)?.size ||
+                        'Chưa chọn'}
                     </span>
                     <span className="text-black text-sm font-normal">
                       Số lượng: {quantity}
@@ -226,7 +228,17 @@ function ProductDetailRight({ data }) {
                   </div>
                 </div>
                 <div className="flex-row flex w-full py-3 gap-2">
-                  <Button variant={'outline'} className="w-full">
+                  <Button
+                    variant={'outline'}
+                    className="w-full"
+                    onClick={() => {
+                      // Close current sheet and open cart sheet
+                      document.querySelector('[aria-label="Close"]')?.click();
+                      document
+                        .querySelector('[aria-label="Open cart"]')
+                        ?.click();
+                    }}
+                  >
                     Xem giỏ hàng ({cart?.listItem?.length || 0})
                   </Button>
                   <Button className="w-full">Thanh toán</Button>
