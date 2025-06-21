@@ -29,11 +29,12 @@ export function CartSheet() {
   const [itemCount, setItemCount] = useState(0);
   const [uniqueItemCount, setUniqueItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   const [checkedItems, setCheckedItems] = useState({});
 
   useEffect(() => {
-    // Update số lượng sản phẩm trong giỏ và các sản phẩm có trong giỏ
+    console.log('CartSheet cart: ', cart);
     const updateCartSheet = async () => {
       // Count total quantity (sum of all item quantities)
       setItemCount(
@@ -60,7 +61,7 @@ export function CartSheet() {
   }, [cart?.listItem, checkedItems]);
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
           aria-label="Open cart"
