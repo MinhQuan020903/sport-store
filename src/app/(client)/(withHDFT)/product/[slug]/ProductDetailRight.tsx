@@ -18,6 +18,7 @@ import { useCart } from '@/hooks/useCart';
 import { useSelectedProduct } from '@/hooks/useSelectedProduct';
 
 function ProductDetailRight({ data }) {
+  console.log('Data: ', data);
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [showError, setShowError] = useState(false);
@@ -46,18 +47,24 @@ function ProductDetailRight({ data }) {
       },
     });
 
-    // Send the product to backend cart using useCart hook
-    onAddToCart({
+    console.log(
+      '🚀 ~ file: ProductDetailRight.tsx:50 ~ handleAddToCart ~ data:',
       data,
+      'selectedSize:',
       selectedSize,
-      quantity,
+      'quantity:',
+      quantity
+    );
+    onAddToCart({
+      quantity: quantity,
+      selectedSizeId: selectedSize,
     });
 
     setIsAdding(false);
   };
 
   const increaseQuantity = () => {
-    const selectedSizeObj = data.sizes.find((s) => s.size === selectedSize);
+    const selectedSizeObj = data.sizes.find((s) => s.id === selectedSize);
     if (selectedSizeObj && quantity < selectedSizeObj.quantity) {
       setQuantity((prev) => prev + 1);
     }
@@ -99,9 +106,9 @@ function ProductDetailRight({ data }) {
               onClick={
                 size.quantity > 0
                   ? () => {
-                      setSelectedSize(size.size);
+                      setSelectedSize(size.id);
                       setShowError(false);
-                      setQuantity(1); // Reset quantity when changing size
+                      setQuantity(1);
                     }
                   : () => {}
               }
@@ -112,7 +119,7 @@ function ProductDetailRight({ data }) {
                   size.quantity > 0
                     ? 'hover:border-black cursor-pointer'
                     : 'cursor-not-allowed disabled bg-black/[0.1] opacity-50'
-                } ${selectedSize === size.size ? 'border-black' : ''} `}
+                } ${selectedSize === size.id ? 'border-black' : ''} `}
             >
               {size.size}
             </div>
@@ -148,22 +155,20 @@ function ProductDetailRight({ data }) {
               className="w-8 h-8 flex items-center justify-center border rounded-full"
               disabled={
                 quantity >=
-                (data.sizes.find((s) => s.size === selectedSize)?.quantity || 0)
+                (data.sizes.find((s) => s.id === selectedSize)?.quantity || 0)
               }
             >
               <FiPlus
                 className={
                   quantity >=
-                  (data.sizes.find((s) => s.size === selectedSize)?.quantity ||
-                    0)
+                  (data.sizes.find((s) => s.id === selectedSize)?.quantity || 0)
                     ? 'text-gray-300'
                     : 'text-black'
                 }
               />
             </button>
             <span className="text-sm text-gray-500 ml-2">
-              Còn{' '}
-              {data.sizes.find((s) => s.size === selectedSize)?.quantity || 0}{' '}
+              Còn {data.sizes.find((s) => s.id === selectedSize)?.quantity || 0}{' '}
               sản phẩm
             </span>
           </div>

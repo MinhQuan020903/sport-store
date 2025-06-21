@@ -67,6 +67,18 @@ const nextConfig = {
                 hostname: '*.cloudinary.com',
                 port: '',
             },
+            {
+                protocol: 'https',
+                hostname: '*.hstatic.net',
+                port: '',
+            },
+
+            {
+                protocol: 'https',
+                hostname: '*.uniid.it',
+                port: '',
+            },
+
         ],
     },
 }

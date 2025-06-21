@@ -17,16 +17,8 @@ export const useSelectedProduct = () => {
   const isShowSuccess =
     useSelector((state: any) => state.selectedProduct?.isShowDialog) || null;
 
-  const onSelectProduct = useCallback(async (data: any) => {
-    try {
-      const productDetail = await getRequest({
-        endPoint: `/api/product/detail?productId=${data?.data.id}`,
-      });
-
-      dispatch(selectProduct(productDetail));
-    } catch (error) {
-      console.error(error);
-    }
+  const onSelectProduct = useCallback(async ({ data }: any) => {
+    dispatch(selectProduct(data));
   }, []);
 
   const onToggleDialog = useCallback(() => {
