@@ -6,7 +6,6 @@ import {
   toggleSuccess,
   unselectProduct,
 } from '@/redux/cart/selected-product/selectedProduct';
-import { getRequest } from '@/lib/fetch';
 
 export const useSelectedProduct = () => {
   const dispatch = useDispatch();

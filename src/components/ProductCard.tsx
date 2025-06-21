@@ -9,7 +9,6 @@ import {
   AiOutlineShoppingCart,
 } from 'react-icons/ai';
 import { useCart } from '@/hooks/useCart';
-import { useWishList } from '@/hooks/useWishList';
 import { useSelectedProduct } from '@/hooks/useSelectedProduct';
 import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types';
@@ -25,7 +24,6 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const { cart } = useCart();
   const { onSelectProduct, onToggleDialog } = useSelectedProduct();
-  const { wishList, onAddUserWishList, onRemoveUserWishList } = useWishList();
 
   // Check if product is in cart
   useEffect(() => {
@@ -38,16 +36,6 @@ export default function ProductCard({ product }: ProductCardProps) {
       setIsAddToCart(true);
     }
   }, [cart?.listItem, product?.id]);
-
-  // Check if product is in wishlist
-  useEffect(() => {
-    if (!wishList) return;
-
-    const isProductInWishList = wishList.some(
-      (wishListProduct) => wishListProduct.id === product.id
-    );
-    setIsLiked(isProductInWishList);
-  }, [wishList, product.id]);
 
   // Get main photo URL or first photo URL or fallback image
   const getProductImage = () => {
@@ -95,14 +83,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Wishlist button */}
         <div
-          onClick={() => {
-            if (!isLiked) {
-              onAddUserWishList(product);
-            } else {
-              onRemoveUserWishList(product);
-            }
-            setIsLiked(!isLiked);
-          }}
+          onClick={() => {}}
           className="transform duration-200 hover:scale-105 absolute items-center justify-center cursor-pointer flex top-3 right-3 w-[30px] h-[30px] rounded-full bg-white shadow-sm"
         >
           {isLiked ? (

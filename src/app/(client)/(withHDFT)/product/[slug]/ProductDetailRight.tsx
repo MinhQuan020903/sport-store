@@ -179,7 +179,7 @@ function ProductDetailRight({ data }) {
         {/* Add to cart button */}
         <div className="w-full flex">
           <Sheet>
-            <SheetTrigger className="w-full mx-0 flex items-center justify-center">
+            <SheetTrigger asChild>
               <Button
                 className="w-full py-4 rounded-full bg-black text-white text-lg
                   font-medium transition-transform active:scale-95 mb-3 hover:opacity-75"

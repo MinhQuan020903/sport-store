@@ -3,24 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input, Spinner, Textarea } from '@nextui-org/react';
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { parseJSON } from '@/lib/utils';
 import { FaCheckCircle, FaStar, FaExclamationTriangle } from 'react-icons/fa';
 import { Controller, useForm } from 'react-hook-form';
-import { generateReactHelpers } from '@uploadthing/react/hooks';
 import { Label } from '@/components/ui/label';
-import { Zoom } from '@/components/ui/zoom-image';
-import { OurFileRouter } from '@/app/api/uploadthing/core';
-import { type FileWithPath } from 'react-dropzone';
-import { FileDialog } from '@/app/(authenticated)/admin/add-product/FileDialog';
 import { getSession } from 'next-auth/react';
 import { useReview } from '@/hooks/useReview';
 import { useRouter } from 'next/navigation';
 import DialogCustom from '@/components/ui/dialogCustom';
-
-type FileWithPreview = FileWithPath & {
-  preview: string;
-};
-const { useUploadThing } = generateReactHelpers<OurFileRouter>();
 
 const ProductReviewForm = ({
   product,
@@ -32,18 +21,20 @@ const ProductReviewForm = ({
 
   //POST hook
   const { onPostProductReview } = useReview();
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
-  const { isUploading, startUpload } = useUploadThing('imageUploader');
+
   //Star rating when hover and click
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [isVisible, setIsVisible] = React.useState(false);
+
   //Loading and success
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
+
   //Show dialog
   const [isShowDialog, setIsShowDialog] = useState(false);
+
   //Invalid input
   const [isTitleValid, setIsTitleValid] = useState(false);
   const [isContentValid, setIsContentValid] = useState(false);
@@ -51,66 +42,47 @@ const ProductReviewForm = ({
   //Get session
   const onGetSession = async () => {
     const session = await getSession();
-    const userId = parseInt(session?.user?.id);
+    const userId = session?.user?.id || '';
     return userId;
   };
 
   const { handleSubmit, control, reset } = useForm();
+
   //Submit function
   const onSubmit = async (data) => {
     await setIsInvalid(false);
-    console.log(
-      'isInvalid = ' +
-        isInvalid +
-        ' rating = ' +
-        rating +
-        ' isTitleValid = ' +
-        isTitleValid +
-        ' isContentValid = ' +
-        isContentValid
-    );
-    // Reset isInvalid to false when the dialog is opened
+
+    // Validate input
     if (rating === 0) {
-      setIsInvalid(true); // Set isInvalid to true if rating is 0
+      setIsInvalid(true);
       return;
     }
+
     if (data.title === '') {
       setIsTitleValid(false);
-      setIsInvalid(true); // Set isInvalid to true if title is empty
+      setIsInvalid(true);
       return;
     } else {
       setIsTitleValid(true);
     }
+
     if (data.text === '') {
       setIsContentValid(false);
-      setIsInvalid(true); // Set isInvalid to true if content is empty
+      setIsInvalid(true);
       return;
     } else {
       setIsContentValid(true);
     }
-    //If all input is valid, then submit
-    // Set loading state to true when submitting for submiting dialog
 
+    // Set loading state to true when submitting
     setIsLoading(true);
-    const userId = await onGetSession();
-    const images = await startUpload([...files]).then((res) => {
-      const formattedImages = res?.map((image) => ({
-        id: image.key,
-        name: image.key.split('_')[1] ?? image.key,
-        url: image.url,
-      }));
-      return formattedImages ?? null;
-    });
 
-    // const [data] = useQuery('key', func(), {});
     const ret = await onPostProductReview(
       JSON.stringify({
-        ...data,
+        title: data.title,
+        content: data.text,
         rating: parseInt(data.rating),
-        image: [...images],
-        userId: userId,
         productId: product.id,
-        reviewDate: new Date(),
       })
     );
 
@@ -123,7 +95,6 @@ const ProductReviewForm = ({
       // Reset form and other state variables after submission after 2sec
       setTimeout(() => {
         reset();
-        setFiles([]);
         setRating(0);
         setHover(0);
         setIsShowDialog(false);
@@ -135,6 +106,7 @@ const ProductReviewForm = ({
       reviewRatingRefetch();
     }
   };
+
   return (
     <div>
       <div className="flex items-center justify-center">
@@ -157,6 +129,7 @@ const ProductReviewForm = ({
           Viết Đánh Giá Sản Phẩm
         </Button>
       </div>
+
       {/* Check condition to open dialog */}
       {isShowDialog ? (
         <DialogCustom
@@ -170,7 +143,6 @@ const ProductReviewForm = ({
             reset();
             setRating(0);
             setHover(0);
-            setFiles([]);
             setIsInvalid(false);
           }}
         >
@@ -184,7 +156,12 @@ const ProductReviewForm = ({
               </span>
               <div className="w-full h-fit mt-2 flex flex-row gap-3 items-center">
                 <Image
-                  src={parseJSON(product?.images)[0].url}
+                  src={
+                    product.mainPhotoUrl ||
+                    (product.photos && product.photos.length > 0
+                      ? product.photos[0].url
+                      : '/placeholder.jpg')
+                  }
                   alt={product.name}
                   width={60}
                   height={50}
@@ -290,59 +267,21 @@ const ProductReviewForm = ({
               />
             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label className="font-semibold text-[10px] sm:text-[14px]">
-                Hình ảnh
-              </Label>
-              {files?.length ? (
-                <div className="flex items-center gap-2">
-                  {files.map((file, i) => (
-                    <Zoom key={i}>
-                      <Image
-                        src={file.preview}
-                        alt={file.name}
-                        className="h-20 w-20 shrink-0 rounded-md object-cover object-center"
-                        width={80}
-                        height={80}
-                      />
-                    </Zoom>
-                  ))}
-                </div>
-              ) : null}
-              <Controller
-                defaultValue={''}
-                name={'image'}
-                control={control}
-                render={({ field }) => {
-                  return (
-                    <FileDialog
-                      setValue={field.onChange}
-                      name="images"
-                      maxFiles={8}
-                      maxSize={1024 * 1024 * 4}
-                      files={files}
-                      setFiles={setFiles}
-                      isUploading={isUploading}
-                      disabled={false}
-                    />
-                  );
+            <div className="flex w-full mt-5 justify-center items-center">
+              <Button
+                className="w-[50%] inset-0 border-transparent hover:scale-105 hover:transition text-[13px] sm:text-[16px] hover:duration-200 font-semibold text-white rounded-md"
+                onClick={async () => {
+                  try {
+                    await handleSubmit(onSubmit)();
+                  } catch (error) {
+                    // Handle submission error if needed
+                  }
                 }}
-              />
-              <div className="flex w-full mt-5 justify-center items-center">
-                <Button
-                  className="w-[50%] inset-0 border-transparent hover:scale-105 hover:transition text-[13px] sm:text-[16px] hover:duration-200 font-semibold text-white rounded-md"
-                  onClick={async () => {
-                    try {
-                      await handleSubmit(onSubmit)();
-                    } catch (error) {
-                      // Handle submission error if needed
-                    }
-                  }}
-                >
-                  Xác nhận
-                </Button>
-              </div>
+              >
+                Xác nhận
+              </Button>
             </div>
+
             <div className="flex flex-col gap-3 items-center justify-center">
               {/* Loading Dialog */}
               {isLoading &&

@@ -23,7 +23,6 @@ import { AiOutlineHeart } from 'react-icons/ai';
 import { CartSheet } from '../CartSheet';
 import { Badge } from '../ui/badge';
 import Logo from '../logo';
-import { useWishList } from '@/hooks/useWishList';
 
 const NavigationMenuDemo = ({ session }) => {
   const [user] = useState(session?.user);
@@ -47,12 +46,6 @@ const NavigationMenuDemo = ({ session }) => {
     }
     setLastScrollY(window.scrollY);
   };
-
-  const { wishList } = useWishList();
-  const [wishListCount, setWishListCount] = useState(0);
-  useEffect(() => {
-    setWishListCount(wishList?.length);
-  }, [wishList]);
 
   return (
     <div
@@ -216,14 +209,6 @@ const NavigationMenuDemo = ({ session }) => {
           <div className="flex flex-row gap-5 items-center justify-center">
             <Link href={'/favorite'}>
               <Button variant="outline" size="icon" className="relative">
-                {wishListCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="absolute -right-2 -top-2 h-6 w-6 justify-center rounded-full p-2.5"
-                  >
-                    {wishListCount}
-                  </Badge>
-                )}
                 {
                   <AiOutlineHeart className="text-slate-600 stroke-zinc-950 w-4 h-4 " />
                 }

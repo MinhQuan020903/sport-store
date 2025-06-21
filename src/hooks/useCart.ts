@@ -264,8 +264,8 @@ export const useCart = () => {
 
           // Handle different cart item formats
           if (userCart) {
-            // API response format has items with product field
-            currentItem = userCart.find((item) => item.productId === data.id);
+            // Find the item in the cart
+            currentItem = userCart.find((item) => item.id === data.id);
           }
 
           const currentQuantity = currentItem?.quantity || 0;
@@ -273,28 +273,32 @@ export const useCart = () => {
           console.log('Decreasing item quantity:', {
             itemId: data.id,
             currentQuantity,
-            newQuantity: currentQuantity - 1,
+            newQuantity: Math.max(1, currentQuantity - 1), // Ensure quantity never goes below 1
           });
 
-          if (currentQuantity <= 1) {
-            // If quantity would become 0, remove the item instead
-            onDeleteItemFromCart({ data, selectedSize, quantity: 1 });
-          } else {
+          // Only update if quantity is greater than 1
+          if (currentQuantity > 1) {
             // Call the PUT API endpoint to update quantity
             updateCartMutation.mutate({
               data,
               selectedSize,
               quantity: currentQuantity - 1,
             });
+          } else {
+            // If quantity is already 1, don't do anything or show a message
+            toast.info('Minimum quantity reached');
+            // Refresh the cart to ensure consistent UI
+            queryClient.invalidateQueries(['useCart']);
           }
         } catch (error) {
           console.error('Error decreasing cart item:', error);
         }
       } else {
+        // For Redux cart, the reducer already handles the minimum quantity check
         dispatch(decreaseItemFromCart({ data, selectedSize }));
       }
     },
-    [isAuthenticated, dispatch, updateCartMutation, userCart]
+    [isAuthenticated, dispatch, updateCartMutation, userCart, queryClient]
   );
 
   // Delete item from cart - matches DELETE /api/CartItems/{productId}
