@@ -78,7 +78,6 @@ export const useAuth = () => {
     const user = await getRequest({
       endPoint: `/api/user?userId=${userId}`,
     });
-    console.log('🚀 ~ file: useAuth.ts:97 ~ onGetUserDetail ~ user:', user);
     return user;
   };
 
