@@ -5,35 +5,29 @@ import React from 'react';
 
 const ProductReviewRating = ({ reviewRatingData }) => {
   const averageRating = () => {
-    if (reviewRatingData && reviewRatingData.totalReview > 0) {
-      const totalStar =
-        reviewRatingData.totalFiveStar * 5 +
-        reviewRatingData.totalFourStar * 4 +
-        reviewRatingData.totalThreeStar * 3 +
-        reviewRatingData.totalTwoStar * 2 +
-        reviewRatingData.totalOneStar;
-      return (totalStar / reviewRatingData.totalReview).toFixed(1);
+    if (reviewRatingData && reviewRatingData.averageRating > 0) {
+      return reviewRatingData.averageRating.toFixed(1);
     }
     return '0.0';
   };
 
   const calculatePercentage = (count) => {
-    if (reviewRatingData && reviewRatingData.totalReview > 0) {
-      return ((count / reviewRatingData.totalReview) * 100).toFixed(1) + '%';
+    if (reviewRatingData && reviewRatingData.reviewCount > 0) {
+      return ((count / reviewRatingData.reviewCount) * 100).toFixed(1) + '%';
     }
     return '0%';
   };
 
   const fiveStarPercentage = () =>
-    calculatePercentage(reviewRatingData?.totalFiveStar || 0);
+    calculatePercentage(reviewRatingData?.fiveStarCount || 0);
   const fourStarPercentage = () =>
-    calculatePercentage(reviewRatingData?.totalFourStar || 0);
+    calculatePercentage(reviewRatingData?.fourStarCount || 0);
   const threeStarPercentage = () =>
-    calculatePercentage(reviewRatingData?.totalThreeStar || 0);
+    calculatePercentage(reviewRatingData?.threeStarCount || 0);
   const twoStarPercentage = () =>
-    calculatePercentage(reviewRatingData?.totalTwoStar || 0);
+    calculatePercentage(reviewRatingData?.twoStarCount || 0);
   const oneStarPercentage = () =>
-    calculatePercentage(reviewRatingData?.totalOneStar || 0);
+    calculatePercentage(reviewRatingData?.oneStarCount || 0);
 
   const ratingValue = averageRating();
   const starArray = Array.from(
@@ -84,7 +78,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     </span>
                     <span className="inline-block text-2xl ml-8 font-semibold">
                       {`${
-                        reviewRatingData ? reviewRatingData?.totalReview : ''
+                        reviewRatingData ? reviewRatingData?.reviewCount : ''
                       } Đánh Giá`}
                     </span>
                   </div>
@@ -97,7 +91,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                         <div className="w-14 text-xs lg:text-sm pr-1 font-bold">
                           5 Sao
                         </div>
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 border-1 rounded-lg">
                             <div
                               className={`h-4 bg-slate-800 border-1 rounded-xl`}
@@ -108,7 +102,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                           <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                         )}
 
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                             {fiveStarPercentage()}
                           </span>
@@ -125,7 +119,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                         <div className="w-14 text-xs lg:text-sm pr-1 font-bold">
                           4 Sao
                         </div>
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 border-1 rounded-lg">
                             <div
                               className={`h-4 bg-slate-800 border-1 rounded-xl`}
@@ -136,7 +130,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                           <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                         )}
 
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                             {fourStarPercentage()}
                           </span>
@@ -153,7 +147,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                         <div className="w-14 text-xs lg:text-sm pr-1 font-bold">
                           3 Sao
                         </div>
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 border-1 rounded-lg">
                             <div
                               className={`h-4 bg-slate-800 border-1 rounded-xl`}
@@ -164,7 +158,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                           <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                         )}
 
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                             {threeStarPercentage()}
                           </span>
@@ -181,7 +175,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                         <div className="w-14 text-xs lg:text-sm pr-1 font-bold">
                           2 Sao
                         </div>
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 border-1 rounded-lg">
                             <div
                               className={`h-4 bg-slate-800 border-1 rounded-xl`}
@@ -192,7 +186,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                           <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                         )}
 
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                             {twoStarPercentage()}
                           </span>
@@ -209,7 +203,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                         <div className="w-14 text-xs lg:text-sm pr-1 font-bold">
                           1 Sao
                         </div>
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 border-1 rounded-lg">
                             <div
                               className={`h-4 bg-slate-800 border-1 rounded-xl`}
@@ -220,7 +214,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                           <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                         )}
 
-                        {reviewRatingData?.totalReview ? (
+                        {reviewRatingData?.reviewCount ? (
                           <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                             {oneStarPercentage()}
                           </span>
@@ -235,8 +229,8 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                 </div>
               </Skeleton>
             </div>
-          ) : reviewRatingData?.totalReview == 0 ? (
-            // Case 2: reviewRatingData is not null, but totalReview is 0
+          ) : reviewRatingData?.reviewCount == 0 ? (
+            // Case 2: reviewRatingData is not null, but reviewCount is 0
             <div>
               <span className="text-2xl font-light">
                 {' '}
@@ -244,7 +238,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
               </span>
             </div>
           ) : (
-            // Case 3: reviewRatingData is not null and totalReview is not 0
+            // Case 3: reviewRatingData is not null and reviewCount is not 0
             <div className="flex flex-col p-1 w-full gap-[15px] items-center justify-center">
               <div>
                 <div className="flex flex-row p-1 w-full gap-4 items-center justify-center">
@@ -275,7 +269,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                   {averageRating()}
                 </span>
                 <span className="inline-block text-2xl ml-8 font-semibold">
-                  {`${reviewRatingData?.totalReview} Đánh Giá`}
+                  {`${reviewRatingData?.reviewCount} Đánh Giá`}
                 </span>
               </div>
               <div className="flex flex-row w-full p-8 md:ml-4 mr-4 xs:mr-0">
@@ -287,7 +281,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     <div className="w-14 text-xs sm:text-sm pr-1 font-bold">
                       5 Sao
                     </div>
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 rounded-lg">
                         <div
                           className={`h-4 bg-slate-800 rounded-xl`}
@@ -298,7 +292,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                       <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                     )}
 
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                         {fiveStarPercentage()}
                       </span>
@@ -316,7 +310,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     <div className="w-14 text-xs sm:text-sm pr-1 font-bold">
                       4 Sao
                     </div>
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 rounded-lg">
                         <div
                           className={`h-4 bg-slate-800 rounded-xl`}
@@ -327,7 +321,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                       <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                     )}
 
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                         {fourStarPercentage()}
                       </span>
@@ -344,7 +338,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     <div className="w-14 text-xs sm:text-sm pr-1 font-bold">
                       3 Sao
                     </div>
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 rounded-lg">
                         <div
                           className={`h-4 bg-slate-800 rounded-xl`}
@@ -355,7 +349,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                       <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                     )}
 
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                         {threeStarPercentage()}
                       </span>
@@ -372,7 +366,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     <div className="w-14 text-xs sm:text-sm pr-1 font-bold">
                       2 Sao
                     </div>
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 rounded-lg">
                         <div
                           className={`h-4 bg-slate-800 rounded-xl`}
@@ -383,7 +377,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                       <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                     )}
 
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <span className="lg:w-[10%] w-[5%] inline-block text-[12px] sm:text-sm pl-1 text-center">
                         {twoStarPercentage()}
                       </span>
@@ -400,7 +394,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                     <div className="w-14 text-xs sm:text-sm pr-1 font-bold">
                       1 Sao
                     </div>
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <div className="h-4 xl:w-[75%] md:w-[60%] w-[50%] bg-slate-400 rounded-lg">
                         <div
                           className={`h-4 bg-slate-800 rounded-xl`}
@@ -411,7 +405,7 @@ const ProductReviewRating = ({ reviewRatingData }) => {
                       <Skeleton className="h-4 xl:w-[75%] md:w-[60%] w-[50%]" />
                     )}
 
-                    {reviewRatingData?.totalReview ? (
+                    {reviewRatingData?.reviewCount ? (
                       <span className="lg:w-[10%] w-[5%] inline-block text-[11px] sm:text-sm pl-1 text-center">
                         {oneStarPercentage()}
                       </span>
