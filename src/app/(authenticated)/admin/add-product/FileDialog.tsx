@@ -63,7 +63,6 @@ export function FileDialog<TFieldValues extends FieldValues>({
 }: FileDialogProps<TFieldValues>) {
   const onDrop = React.useCallback(
     (acceptedFiles: FileWithPath[], rejectedFiles: FileRejection[]) => {
-      console.log(acceptedFiles.length, files?.length);
       if (acceptedFiles.length + (files?.length ?? 0) > maxFiles) {
         toast.error(`You can only upload up to ${maxFiles} files`);
         return;
@@ -256,7 +255,6 @@ function FileCard({ i, file, files, setFiles }: FileCardProps) {
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
   }, [onCrop]);
-  console.log(file?.type.startsWith('image'));
   return (
     <div className="relative flex items-center justify-between gap-2.5">
       <div className="flex items-center gap-2">

@@ -47,7 +47,6 @@ export const parseJSON = (str: string, out = []) => {
 };
 
 export const verifyJwt = (token: string) => {
-  console.log(process.env.NEXT_PUBLIC_JWT_SECRET);
   let email = '';
   let name = '';
   try {
