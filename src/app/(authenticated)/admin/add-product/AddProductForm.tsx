@@ -21,10 +21,8 @@ function AddProductForm() {
   const [files, setFiles] = React.useState<FileWithPreview[]>([]);
   const [thumbnail, setThumbnail] = React.useState<FileWithPreview[]>([]);
   const { isUploading, startUpload } = useUploadThing('imageUploader');
-  console.log(files);
   const { handleSubmit, control } = useForm();
   const onSubmit = async (data) => {
-    console.log(data);
     const images = await startUpload([...thumbnail, ...files]).then((res) => {
       const formattedImages = res?.map((image) => ({
         id: image.key,
@@ -33,8 +31,6 @@ function AddProductForm() {
       }));
       return formattedImages ?? null;
     });
-
-    console.log(images);
 
     await fetch('/api/admin/product/create', {
       method: 'POST',

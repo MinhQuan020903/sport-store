@@ -141,6 +141,24 @@ export const deleteReview = async (id: string) => {
   }
 };
 
+export const getProductRating = async (productId: string) => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/Products/${productId}/rating`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product rating:', error);
+    throw error;
+  }
+};
+
 export const useReview = () => {
   const onGetProductReview = async (productId: string, page: number) => {
     const params: ReviewParams = {
@@ -227,11 +245,22 @@ export const useReview = () => {
     }
   };
 
+  const onGetProductRating = async (productId: string) => {
+    try {
+      const response = await getProductRating(productId);
+      return response;
+    } catch (error) {
+      console.error('Error fetching product rating:', error);
+      return null;
+    }
+  };
+
   return {
     onGetProductReview,
     onPostProductReview,
     onUpdateProductReview,
     onDeleteProductReview,
-    onGetProductReviewRating,
+    onGetProductReviewRating, // You can keep this for backward compatibility
+    onGetProductRating, // Add the new function
   };
 };

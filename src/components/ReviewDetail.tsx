@@ -1,7 +1,6 @@
 'use client';
 import { CommonSvg } from '@/assets/CommonSvg';
 import { useReview } from '@/hooks/useReview';
-import { getSession } from 'next-auth/react';
 import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { Button } from './ui/button';
@@ -38,9 +37,8 @@ const useTruncatedElement = ({ ref }) => {
   };
 };
 
-const ReviewDetail = ({ data, onReviewUpdated }) => {
+const ReviewDetail = ({ data, onReviewUpdated, canEditDelete = false }) => {
   const ref = useRef(null);
-  const [isCurrentUserOwner, setIsCurrentUserOwner] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,18 +50,6 @@ const ReviewDetail = ({ data, onReviewUpdated }) => {
     useTruncatedElement({
       ref,
     });
-
-  // Check if current user is the owner of this review
-  useEffect(() => {
-    const checkOwnership = async () => {
-      const session = await getSession();
-      if (session?.user?.id === data.ownerId) {
-        setIsCurrentUserOwner(true);
-      }
-    };
-
-    checkOwnership();
-  }, [data.ownerId]);
 
   // Setup form when edit dialog opens
   useEffect(() => {
@@ -156,7 +142,7 @@ const ReviewDetail = ({ data, onReviewUpdated }) => {
           ))}
         </div>
 
-        {isCurrentUserOwner && (
+        {canEditDelete && (
           <div className="flex gap-2">
             <Button
               variant="ghost"

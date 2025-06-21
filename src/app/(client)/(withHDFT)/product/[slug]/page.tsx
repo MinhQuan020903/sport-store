@@ -29,9 +29,9 @@ async function page({ params }) {
         <div>
           <ProductReview product={data} />
         </div>
-        <div>
+        {/* <div>
           <ProductUserMayLike data={data} />
-        </div>
+        </div> */}
       </div>
 
       <AddProductDialog />

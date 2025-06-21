@@ -87,7 +87,10 @@ const ProductReviewForm = ({
     );
 
     if (ret) {
-      console.log(ret);
+      // Immediately refresh the data after successful submission
+      reviewItemRefetch();
+      reviewRatingRefetch();
+
       // Set loading state to false and show success dialog
       setIsLoading(false);
       setShowSuccess(true);
@@ -102,8 +105,6 @@ const ProductReviewForm = ({
         setShowSuccess(false);
         setIsInvalid(false);
       }, 2000);
-      reviewItemRefetch();
-      reviewRatingRefetch();
     }
   };
 
@@ -116,7 +117,6 @@ const ProductReviewForm = ({
             const getSession = async () => {
               const session = await onGetSession();
               if (!session) {
-                console.log('no session');
                 router.push('/auth/login');
               } else {
                 setIsShowDialog(true);

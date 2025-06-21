@@ -7,15 +7,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useReview } from '@/hooks/useReview';
 
 const ProductReview = ({ product }) => {
-  //State of current page for pagination
+  // State of current page for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const onSetCurrentPage = (page) => {
     setCurrentPage(page);
   };
 
-  const { onGetProductReview, onGetProductReviewRating } = useReview();
+  const { onGetProductReview, onGetProductRating } = useReview();
 
-  //Get review data per page from API
+  // Get review data per page from API
   // Define a query key and fetch function for fetching review data
   const reviewDataQueryKey = ['productReview', product.id, currentPage];
   const fetchReviewData = async () => {
@@ -23,10 +23,10 @@ const ProductReview = ({ product }) => {
     return fetchedReviewData;
   };
 
-  // Define a query key and fetch function for fetching review rating data
-  const reviewRatingQueryKey = ['productReviewRating', product.id];
+  // Define a query key and fetch function for fetching review rating data using the new API
+  const reviewRatingQueryKey = ['productRating', product.id];
   const fetchReviewRatingData = async () => {
-    const fetchedReviewRatingData = await onGetProductReviewRating(product.id);
+    const fetchedReviewRatingData = await onGetProductRating(product.id);
     return fetchedReviewRatingData;
   };
 
