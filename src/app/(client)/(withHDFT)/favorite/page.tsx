@@ -2,7 +2,7 @@ import React from 'react';
 import WishLists from './WishLists';
 
 async function page() {
-  return <WishLists />;
+  return <div />;
 }
 
 export default page;

@@ -13,11 +13,9 @@ import { CommonSvg } from '@/assets/CommonSvg';
 import { useEffect } from 'react';
 
 function WishLists() {
-  const { wishList } = useWishList();
+  // const { wishList } = useWishList();
 
-  useEffect(() => {
-    console.log('wishList', wishList);
-  }, [wishList]);
+  useEffect(() => {}, []);
 
   return (
     <section className="lg:px-10 px-5 py-10 mt-20 md:mt-30">

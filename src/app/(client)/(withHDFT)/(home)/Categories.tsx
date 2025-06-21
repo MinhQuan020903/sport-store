@@ -83,8 +83,11 @@ function Categories() {
           modules={[Pagination]}
           className=" h-auto overflow-visible relative"
         >
-          {productCategories?.map((category) => (
-            <SwiperSlide className="group relative overflow-hidden rounded-md">
+          {productCategories?.map((category, index) => (
+            <SwiperSlide
+              key={category.title || index}
+              className="group relative overflow-hidden rounded-md"
+            >
               <AspectRatio ratio={5 / 4}>
                 <div className="absolute inset-0 z-10 bg-black/60 transition-colors group-hover:bg-black/70" />
                 <Image

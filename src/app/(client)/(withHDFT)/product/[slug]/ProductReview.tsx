@@ -14,6 +14,7 @@ const ProductReview = ({ product }) => {
   };
 
   const { onGetProductReview, onGetProductReviewRating } = useReview();
+
   //Get review data per page from API
   // Define a query key and fetch function for fetching review data
   const reviewDataQueryKey = ['productReview', product.id, currentPage];
@@ -49,9 +50,15 @@ const ProductReview = ({ product }) => {
     }
   );
 
+  // Function to refresh both review data and rating data
+  const refreshAllReviewData = () => {
+    refetchReviewData();
+    refetchReviewRatingData();
+  };
+
   return (
     <div>
-      <div className=" flex-col gap-1 mt-20 lg:mt-25 justify-center items-center flex text-[34px] font-semibold mb-2 leading-tight">
+      <div className="flex-col gap-1 mt-20 lg:mt-25 justify-center items-center flex text-[34px] font-semibold mb-2 leading-tight">
         Đánh Giá
         <div className="w-full pt-2">
           <ProductReviewRating reviewRatingData={reviewRatingData} />
@@ -61,7 +68,7 @@ const ProductReview = ({ product }) => {
             product={product}
             reviewRatingRefetch={refetchReviewRatingData}
             reviewItemRefetch={refetchReviewData}
-          ></ProductReviewForm>
+          />
         </div>
       </div>
       <div className="w-full py-5">
@@ -70,6 +77,7 @@ const ProductReview = ({ product }) => {
           currentPage={currentPage}
           setCurrentPage={onSetCurrentPage}
           isFetched={isReviewDataFetched}
+          onRefresh={refreshAllReviewData}
         />
       </div>
     </div>
