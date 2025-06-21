@@ -51,8 +51,8 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
   const [productDetails, setProductDetails] = useState<Product | null>(null);
 
   // Generate a unique key for this cart item - handles both API and Redux formats
-  const itemKey = item.productId
-    ? `${item.productId}-${item.productName || ''}-${item.selectedSize || ''}`
+  const itemKey = item.id
+    ? `${item.id}-${item.productName || ''}-${item.selectedSize || ''}`
     : `${item?.data?.id}-${item?.data?.name || ''}-${item?.selectedSize || ''}`;
 
   // Fetch product details if we only have the productId
@@ -135,14 +135,13 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
 
       setQuantity(newQuantity);
 
-      if (item.productId) {
+      if (item.id) {
         // Using API format for authenticated users
         await onIncreaseItemFromCart({
           data: {
-            id: item.productId,
-            name: item.productName || productDetails?.name,
-            price: item.productPrice || productDetails?.price,
-            mainPhotoUrl: item.productPhotoUrl || productDetails?.mainPhotoUrl,
+            id: item.id,
+            name: item.productName,
+            price: item.productPrice,
           },
           selectedSize: item.selectedSize,
         });
@@ -191,14 +190,13 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
       const newQuantity = quantity - 1;
       setQuantity(newQuantity);
 
-      if (item.productId) {
+      if (item.id) {
         // Using API format for authenticated users
         await onDecreaseItemFromCart({
           data: {
-            id: item.productId,
-            name: item.productName || productDetails?.name,
-            price: item.productPrice || productDetails?.price,
-            mainPhotoUrl: item.productPhotoUrl || productDetails?.mainPhotoUrl,
+            id: item.id,
+            name: item.productName,
+            price: item.productPrice,
           },
           selectedSize: item.selectedSize,
         });
@@ -236,14 +234,11 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
     try {
       setIsLoading(true);
 
-      if (item.productId) {
+      if (item.id) {
         // Using API format
         await onDeleteItemFromCart({
           data: {
-            id: item.productId,
-            name: item.productName || productDetails?.name,
-            price: item.productPrice || productDetails?.price,
-            mainPhotoUrl: item.productPhotoUrl || productDetails?.mainPhotoUrl,
+            id: item.id,
           },
           selectedSize: item.selectedSize,
           quantity: item.quantity,
@@ -273,17 +268,14 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
   }, [item.quantity]);
 
   // Determine the product name, price, image to display
-  const productName =
-    item.productName || item?.data?.name || productDetails?.name;
-  const productPrice =
-    item.productPrice || item?.data?.price || productDetails?.price;
+  const productName = item.productName || item?.data?.name;
+  const productPrice = item.productPrice || item?.data?.price;
   const productImage =
     item.productPhotoUrl ||
     (typeof item?.data?.thumbnail === 'object'
       ? item?.data?.thumbnail?.url
       : item?.data?.thumbnail) ||
-    item?.data?.mainPhotoUrl ||
-    productDetails?.mainPhotoUrl;
+    item?.data?.mainPhotoUrl;
   const selectedSize = item.selectedSize || item?.selectedSize;
   const productCategory = productDetails?.categories?.[0]?.name || 'Product';
 

@@ -84,8 +84,11 @@ function ShopByCollection() {
         modules={[Pagination]}
         className="w-full h-auto overflow-visible relative"
       >
-        {productCollections?.map((collection) => (
-          <SwiperSlide className="h-full relative mb-16 overflow-visible">
+        {productCollections?.map((collection, index) => (
+          <SwiperSlide
+            key={index}
+            className="h-full relative mb-16 overflow-visible"
+          >
             <div className="group relative overflow-hidden rounded-md">
               <AspectRatio ratio={5 / 6}>
                 <Image

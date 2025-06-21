@@ -21,7 +21,7 @@ import { CartItem } from '@/types';
 
 // DTOs matching the backend
 interface CreateCartItemDto {
-  productId: string; // Guid in C# maps to string in TS
+  productSizeId: string;
   quantity: number;
 }
 
@@ -112,11 +112,14 @@ export const useCart = () => {
   };
 
   // Add to cart - matches POST /api/CartItems
-  const addToCartMutationFn = async ({ data, selectedSize, quantity }) => {
+  const addToCartMutationFn = async ({ selectedSizeId, quantity }) => {
+    // Get the productSizeId based on the product ID and size
+
     const createCartItemDto: CreateCartItemDto = {
-      productId: data.id,
+      productSizeId: selectedSizeId,
       quantity: quantity,
     };
+    console.log('Adding to cart with DTO:', createCartItemDto);
 
     const response = await axios.post(
       `${API_URL}/api/CartItems`,
@@ -154,15 +157,15 @@ export const useCart = () => {
     },
   });
 
-  const onAddToCart = ({ data, selectedSize, quantity }) => {
+  const onAddToCart = ({ selectedSizeId, quantity }) => {
     if (isAuthenticated) {
       try {
-        addToCartMutation.mutate({ data, selectedSize, quantity });
+        addToCartMutation.mutate({ selectedSizeId, quantity });
       } catch (error) {
         console.error(error);
       }
     } else {
-      dispatch(addToCart({ data, selectedSize, quantity }));
+      dispatch(addToCart({ selectedSizeId, quantity }));
     }
   };
 
@@ -211,27 +214,29 @@ export const useCart = () => {
     }
   };
 
+  // Helper function to get productSizeId from product ID and size
+  const getProductSizeId = async (productId, size) => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/productSizes/sizes/${productId}`
+      );
+      return response.data.id;
+    } catch (error) {
+      console.error('Error fetching product size ID:', error);
+      throw new Error('Failed to get product size ID');
+    }
+  };
+
   // Increase item in cart - uses the update endpoint
   const onIncreaseItemFromCart = useCallback(
     ({ data, selectedSize }) => {
       if (isAuthenticated) {
         try {
-          // First get current quantity, then increase it
-          let currentItem;
+          // Get current quantity from cart
+          const currentItem = userCart.find((item) => item.id === data.id);
+          if (!currentItem) return;
 
-          // Handle different cart item formats
-          if (userCart) {
-            // API response format has items with product field
-            currentItem = userCart.find((item) => item.productId === data.id);
-          }
-
-          const currentQuantity = currentItem?.quantity || 0;
-
-          console.log('Increasing item quantity:', {
-            itemId: data.id,
-            currentQuantity,
-            newQuantity: currentQuantity + 1,
-          });
+          const currentQuantity = currentItem.quantity || 0;
 
           // Call the PUT API endpoint to update quantity
           updateCartMutation.mutate({
@@ -293,11 +298,7 @@ export const useCart = () => {
   );
 
   // Delete item from cart - matches DELETE /api/CartItems/{productId}
-  const deleteItemFromCartMutation = useMutation<
-    any,
-    Error,
-    { data: any; selectedSize: any; quantity: any }
-  >(
+  const deleteItemFromCartMutation = useMutation(
     async ({ data }) => {
       const response = await axios.delete(
         `${API_URL}/api/CartItems/${data.id}`,

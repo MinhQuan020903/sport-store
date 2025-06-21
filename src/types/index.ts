@@ -61,17 +61,19 @@ export interface User {
   email: string;
 }
 
-// Updated CartItem to match the .NET entity
 export interface CartItem {
+  id: string;
   userId: string;
-  productId: string;
-  productName?: string;
-  productPrice?: number;
+  productSizeId: string;
+  productName: string;
+  productPrice: number;
   productPhotoUrl?: string;
   quantity: number;
-  selectedSize?: string;
   createdAt: string;
   updatedAt: string;
-  // Include the product data for UI display purposes
-  product?: Product;
+  selectedSize?: string;
+}
+
+export interface UpdateCartItemDto {
+  quantity: number;
 }

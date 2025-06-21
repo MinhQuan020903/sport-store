@@ -2,10 +2,9 @@
 import ProductCard from '@/components/ProductCard';
 import { useProduct } from '@/hooks/useProduct';
 import { useCategory } from '@/hooks/useCategory';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import InfiniteScroll from 'react-infinite-scroll-component';
+import { useQuery } from '@tanstack/react-query';
 import { Footer } from '@/components/footer';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { sortOptions } from '@/config/products';
 import { cn } from '@/lib/utils';
@@ -38,9 +37,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@nextui-org/react';
-import { Spinner } from '@nextui-org/react';
+import { Checkbox, Pagination, Spinner } from '@nextui-org/react';
 import { AiOutlineFilter } from 'react-icons/ai';
+import Loader from '@/components/Loader';
 
 interface ProductsPageProps {
   q: string | null;
@@ -58,58 +57,17 @@ export default function ProductsPage({
 }: ProductsPageProps) {
   const { onGetProducts } = useProduct();
   const { onGetCategories } = useCategory();
-
-  // Fetch products with infinite query
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    refetch: refetchData,
-    isFetching,
-    isFetchingNextPage,
-  } = useInfiniteQuery(
-    ['products', q, sort, categories, price_range],
-    ({ pageParam = 1 }) =>
-      onGetProducts({
-        page: pageParam,
-        limit: 8,
-        search: q || undefined,
-        sortBy: sort?.split('.')[0] || 'createdAt',
-        sortOrder: sort?.split('.')[1] || 'desc',
-        categoryId: categories || undefined,
-        minPrice: price_range ? Number(price_range.split('-')[0]) : undefined,
-        maxPrice: price_range ? Number(price_range.split('-')[1]) : undefined,
-      }),
-    {
-      staleTime: 1000 * 60 * 1,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
-      getNextPageParam: (lastPage, pages) => {
-        if (lastPage.currentPage < lastPage.totalPages) {
-          return lastPage.currentPage + 1;
-        }
-        return undefined;
-      },
-    }
-  );
-
-  // Fetch categories with React Query
-  const { data: categoriesData, isLoading: isLoadingCategories } = useQuery(
-    ['categories'],
-    () => onGetCategories({ limit: 100 }),
-    {
-      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-      refetchOnWindowFocus: false,
-    }
-  );
-
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = React.useTransition();
+  const [isPending, startTransition] = useTransition();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(12);
 
   // Create query string
-  const createQueryString = React.useCallback(
+  const createQueryString = useCallback(
     (params: Record<string, string | number | null>) => {
       const newSearchParams = new URLSearchParams(searchParams?.toString());
 
@@ -126,48 +84,71 @@ export default function ProductsPage({
     [searchParams]
   );
 
-  // Price filter
-  const [priceRange, setPriceRange] = React.useState<[number, number]>([
-    0, 5000000,
+  // Price filter - changed to use null for the max price initially
+  const [priceRange, setPriceRange] = useState<[number, number | null]>([
+    0,
+    null,
   ]);
   const debouncedPrice = useDebounce(priceRange, 500);
 
-  React.useEffect(() => {
-    const [min, max] = debouncedPrice;
-    startTransition(() => {
-      router.push(
-        `${pathname}?${createQueryString({
-          price_range: `${min}-${max}`,
-        })}`,
-        {
-          scroll: false,
-        }
-      );
-    });
-    refetchData();
-  }, [debouncedPrice, createQueryString, pathname, router, refetchData]);
-
   // Category filter
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
-    []
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  // Search bar
+  const [searchQuery, setSearchQuery] = useState<string | null>(q || '');
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Fetch products with pagination
+  const {
+    data: productsData,
+    isLoading,
+    refetch: refetchProducts,
+  } = useQuery(
+    [
+      'products',
+      debouncedSearch,
+      sort,
+      selectedCategories,
+      debouncedPrice[0],
+      debouncedPrice[1],
+      currentPage,
+    ],
+    async () => {
+      // Create params object for API call
+      const params: any = {
+        page: currentPage,
+        limit: pageSize,
+        sortBy: sort?.split('.')[0] || 'createdAt',
+        sortOrder: sort?.split('.')[1] || 'desc',
+      };
+
+      // Only add parameters if they have valid values
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (selectedCategories.length > 0)
+        params.categoryId = selectedCategories.join('.');
+      if (debouncedPrice[0] > 0) params.minPrice = debouncedPrice[0];
+      if (debouncedPrice[1] !== null) params.maxPrice = debouncedPrice[1];
+
+      return onGetProducts(params);
+    },
+    {
+      staleTime: 1000 * 60 * 1, // 1 minute
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+    }
   );
 
-  React.useEffect(() => {
-    startTransition(() => {
-      router.push(
-        `${pathname}?${createQueryString({
-          categories: selectedCategories?.length
-            ? selectedCategories.join('.')
-            : null,
-        })}`,
-        {
-          scroll: false,
-        }
-      );
-    });
-    refetchData();
-  }, [selectedCategories, createQueryString, pathname, router, refetchData]);
+  // Fetch categories
+  const { data: categoriesData, isLoading: isLoadingCategories } = useQuery(
+    ['categories'],
+    () => onGetCategories({ limit: 100 }),
+    {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    }
+  );
 
+  // Toggle category selection
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId)
@@ -176,129 +157,229 @@ export default function ProductsPage({
     );
   };
 
-  // Initialize selected categories from URL params
-  React.useEffect(() => {
-    if (categories) {
-      const categoryIds = categories.split('.');
-      setSelectedCategories(categoryIds);
-    } else {
-      setSelectedCategories([]);
-    }
-  }, [categories]);
-
-  // Search bar
-  const [searchQuery, setSearchQuery] = useState<string | null>(q ? q : '');
-  const debouncedSearch = useDebounce(searchQuery, 500);
-
-  React.useEffect(() => {
-    const encodedSearchQuery = debouncedSearch
-      ? encodeURI(debouncedSearch)
-      : null;
+  // Update URL when filters change
+  useEffect(() => {
     startTransition(() => {
       router.push(
         `${pathname}?${createQueryString({
-          q: encodedSearchQuery,
+          q: debouncedSearch || null,
+          // Only include price_range if maxPrice is not null
+          price_range:
+            debouncedPrice[1] !== null
+              ? `${debouncedPrice[0]}-${debouncedPrice[1]}`
+              : debouncedPrice[0] > 0
+              ? `${debouncedPrice[0]}-`
+              : null,
+          categories:
+            selectedCategories.length > 0 ? selectedCategories.join('.') : null,
+          sort: sort || null,
+          page: currentPage,
         })}`,
-        {
-          scroll: false,
-        }
+        { scroll: false }
       );
     });
-    refetchData();
-  }, [debouncedSearch, createQueryString, pathname, router, refetchData]);
+  }, [
+    debouncedSearch,
+    debouncedPrice,
+    selectedCategories,
+    sort,
+    currentPage,
+    pathname,
+    router,
+    createQueryString,
+  ]);
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    if (categories) {
+      setSelectedCategories(categories.split('.'));
+    }
+
+    if (price_range) {
+      const [min, max] = price_range.split('-').map(Number);
+      setPriceRange([min, max]);
+    }
+
+    if (q) {
+      setSearchQuery(q);
+    }
+  }, []);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setPriceRange([0, null]);
+    setSelectedCategories([]);
+    setSearchQuery('');
+    setCurrentPage(1);
+    router.push('/products');
+  };
+
+  // Extract products and total pages with improved response handling
+  const formatProductsData = (data) => {
+    // Handle direct array response
+    if (Array.isArray(data)) {
+      console.log('Response is an array of products:', data.length);
+      return {
+        products: data,
+        totalPages: 1, // No pagination info in direct array
+        hasProducts: data.length > 0,
+      };
+    }
+    // Handle paginated response with items array
+    else if (data?.items && Array.isArray(data.items)) {
+      console.log('Response has items array:', data.items.length);
+      return {
+        products: data.items,
+        totalPages:
+          data.totalPages || Math.ceil(data.totalCount / pageSize) || 1,
+        hasProducts: data.items.length > 0,
+      };
+    }
+    // Handle response with data property containing array
+    else if (data?.data && Array.isArray(data.data)) {
+      console.log('Response has data array:', data.data.length);
+      return {
+        products: data.data,
+        totalPages:
+          data.totalPages || Math.ceil(data.totalCount / pageSize) || 1,
+        hasProducts: data.data.length > 0,
+      };
+    }
+    // Default empty case
+    else {
+      console.warn('Unexpected response format:', data);
+      return {
+        products: [],
+        totalPages: 1,
+        hasProducts: false,
+      };
+    }
+  };
+
+  // Process the response data
+  const { products, totalPages, hasProducts } =
+    formatProductsData(productsData);
+
+  // Debug output to help identify the issue
+  useEffect(() => {
+    if (productsData) {
+      console.log('Raw API Response:', productsData);
+      console.log('Processed Products:', products);
+      console.log('Has Products:', hasProducts);
+    }
+  }, [productsData]);
 
   return (
-    <section className="flex flex-col space-y-6" {...props}>
-      <div className="flex space-x-2 items-end px-4">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              aria-label="Filter products"
-              className="fixed top-[55px] left-50 w-[30px] h-[30px] z-50 p-2 rounded-full bg-white shadow-md hover:shadow-lg"
-              disabled={isPending}
-            >
-              <div className="transform duration-200 hover:scale-105 flex items-center justify-center cursor-pointer">
-                <AiOutlineFilter className="text-slate-600 w-6 h-6" />
-              </div>
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="flex flex-col">
-            <SheetHeader className="px-1">
-              <SheetTitle>Filters</SheetTitle>
-            </SheetHeader>
-            <Separator />
-            <div className="flex flex-col lg:flex-row items-center space-x-0 lg:space-x-4 space-y-4 lg:space-y-0 ">
-              <form className="flex justify-center w-5/6 h-8 rounded-md px-3">
-                <input
-                  value={searchQuery || ''}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  className="px-5 py-1 w-2/3 sm:px-5 sm:py-3 flex-1 text-zinc-800 bg-zinc-100 focus:bg-white rounded-full focus:outline-none focus:ring-[1px] focus:ring-black placeholder:text-zinc-400"
-                  placeholder="What are you looking?"
-                />
-              </form>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    aria-label="Sort products"
-                    className="w-[60%] lg:w-auto h-6"
-                    disabled={isPending}
+    <section className="flex flex-col space-y-6 pb-10" {...props}>
+      {/* Filters and Search */}
+      <div className="flex justify-between items-center px-4 sticky top-16 z-10 bg-white py-4 shadow-sm">
+        {/* Sort Dropdown */}
+        <div className="w-full flex flex-row items-center gap-2 justify-end">
+          <div className="flex flex-row gap-3 items-center">
+            <p className="text-sm text-muted-foreground hidden sm:block">
+              Sort:
+            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Sort products"
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  disabled={isPending}
+                >
+                  {sortOptions.find((option) => option.value === sort)?.label ||
+                    'Latest'}
+                  <ChevronDownIcon className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {sortOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.label}
+                    className={cn(option.value === sort && 'font-bold')}
+                    onClick={() => {
+                      startTransition(() => {
+                        router.push(
+                          `${pathname}?${createQueryString({
+                            sort: option.value,
+                          })}`,
+                          { scroll: false }
+                        );
+                      });
+                    }}
                   >
-                    Sort
-                    <ChevronDownIcon
-                      className="ml-2 h-4 w-4"
-                      aria-hidden="true"
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {sortOptions.map((option) => (
-                    <DropdownMenuItem
-                      key={option.label}
-                      className={cn(option.value === sort && 'font-bold')}
-                      onClick={() => {
-                        startTransition(() => {
-                          router.push(
-                            `${pathname}?${createQueryString({
-                              sort: option.value,
-                            })}`,
-                            {
-                              scroll: false,
-                            }
-                          );
-                        });
-                      }}
-                    >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <Separator />
-            <div className="flex flex-1 flex-col gap-5 overflow-hidden px-1">
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                aria-label="Filter products"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+                disabled={isPending}
+              >
+                <AiOutlineFilter className="h-4 w-4" />
+                Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="flex flex-col">
+              <SheetHeader className="px-1">
+                <SheetTitle>Filters</SheetTitle>
+              </SheetHeader>
+              <Separator />
+
+              {/* Search */}
+              <div className="my-4">
+                <h3 className="text-sm font-medium mb-2">Search</h3>
+                <Input
+                  value={searchQuery || ''}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                  placeholder="What are you looking for?"
+                />
+              </div>
+
+              {/* Price Range */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium tracking-wide text-foreground">
-                  Price range ($)
+                <h3 className="text-sm font-medium tracking-wide">
+                  Price range (đ)
                 </h3>
                 <Slider
                   variant="range"
                   thickness="thin"
-                  defaultValue={[0, 5000000]}
-                  max={5000000}
-                  step={1}
-                  value={priceRange}
-                  onValueChange={(value: typeof priceRange) =>
-                    setPriceRange(value)
-                  }
+                  defaultValue={[0, 10000000]}
+                  max={10000000}
+                  step={10000}
+                  value={[
+                    priceRange[0],
+                    priceRange[1] !== null ? priceRange[1] : 10000000,
+                  ]}
+                  onValueChange={(value: [number, number]) => {
+                    // If the slider is at max value, set to null (no upper limit)
+                    const maxPrice = value[1] >= 10000000 ? null : value[1];
+                    setPriceRange([value[0], maxPrice]);
+                  }}
                 />
                 <div className="flex items-center space-x-4">
                   <Input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    max={priceRange[1]}
+                    max={priceRange[1] !== null ? priceRange[1] : 10000000}
                     className="h-9"
                     value={priceRange[0]}
                     onChange={(e) => {
@@ -311,33 +392,38 @@ export default function ProductsPage({
                     type="number"
                     inputMode="numeric"
                     min={priceRange[0]}
-                    max={5000000}
+                    max={10000000}
                     className="h-9"
-                    value={priceRange[1]}
+                    value={priceRange[1] !== null ? priceRange[1] : ''}
+                    placeholder="Max"
                     onChange={(e) => {
-                      const value = Number(e.target.value);
+                      const inputValue = e.target.value;
+                      const value =
+                        inputValue === '' ? null : Number(inputValue);
                       setPriceRange([priceRange[0], value]);
                     }}
                   />
                 </div>
               </div>
 
-              <ScrollArea className="my-2 h-[calc(100vh-8rem)] pb-10 pl-6 pr-5">
+              {/* Categories */}
+              <ScrollArea className="my-2 flex-1 pr-4">
                 <div className="space-y-4">
                   <Accordion
                     type="multiple"
-                    className="w-full overflow-auto no-scrollbar"
+                    defaultValue={['categories']}
+                    className="w-full"
                   >
                     <AccordionItem value="categories">
                       <AccordionTrigger className="text-sm">
                         Categories
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-2">
                           {isLoadingCategories ? (
                             <Spinner size="sm" />
                           ) : (
-                            categoriesData?.items?.map((category) => (
+                            categoriesData?.map((category) => (
                               <Checkbox
                                 key={category.id}
                                 isSelected={selectedCategories.includes(
@@ -355,107 +441,78 @@ export default function ProductsPage({
                   </Accordion>
                 </div>
               </ScrollArea>
-            </div>
-            <div>
-              <Separator className="my-4" />
-              <SheetFooter>
-                <Button
-                  aria-label="Clear filters"
-                  size="sm"
-                  className="w-auto md:w-full pr-5"
-                  onClick={() => {
-                    startTransition(() => {
-                      router.push('/products');
-                      setPriceRange([0, 5000000]);
-                      setSelectedCategories([]);
-                    });
-                  }}
-                  disabled={isPending}
-                >
-                  Clear Filters
-                </Button>
-              </SheetFooter>
-            </div>
-          </SheetContent>
-        </Sheet>
+
+              {/* Actions */}
+              <div>
+                <Separator className="my-4" />
+                <SheetFooter>
+                  <Button
+                    aria-label="Clear filters"
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </Button>
+                </SheetFooter>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
-      {!isPending &&
-      (!data?.pages?.[0]?.items || data.pages[0].items.length === 0) ? (
-        <div className="mx-auto flex max-w-xs flex-col space-y-1.5">
+      {/* Products Display */}
+      {isLoading ? (
+        <div className="w-full py-20 flex items-center justify-center">
+          <Loader />
+        </div>
+      ) : !hasProducts ? (
+        <div className="mx-auto flex max-w-xs flex-col space-y-1.5 py-20">
           <h1 className="text-center text-2xl font-bold">No products found</h1>
           <p className="text-center text-muted-foreground">
             Try changing your filters, or check back later for new products
           </p>
-        </div>
-      ) : null}
-
-      {isFetching && !isFetchingNextPage ? (
-        <div className="w-full h-full flex items-center justify-center">
-          <Spinner size="lg" />
+          <Button className="mt-4" onClick={clearFilters}>
+            Clear all filters
+          </Button>
         </div>
       ) : (
-        <div className="overflow-hidden">
-          {data?.pages?.length > 0 ? (
-            <InfiniteScroll
-              loader={
-                <div className="w-full h-full flex items-center justify-center">
-                  <Spinner size="lg" />
-                </div>
-              }
-              data-testid="infinite-scroll"
-              scrollableTarget="scrollableDiv"
-              style={{ overflow: 'hidden' }}
-              inverse={false}
-              hasChildren={true}
-              pullDownToRefresh={false}
-              pullDownToRefreshThreshold={50}
-              releaseToRefreshContent={
-                <div className="text-center">Release to refresh</div>
-              }
-              endMessage={
-                <p className="text-center text-muted-foreground">
-                  <b>Yay! You have seen it all</b>
-                </p>
-              }
-              dataLength={data.pages.reduce(
-                (acc, page) => acc + (page.items?.length || 0),
-                0
-              )}
-              next={() => fetchNextPage()}
-              hasMore={hasNextPage || false}
-              className="h-full"
-            >
-              <div className="px-4">
-                {data.pages?.map((page, pageIndex) => (
-                  <div
-                    className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-                    key={pageIndex}
-                  >
-                    {Array.isArray(page)
-                      ? page.map((product, productIndex) => (
-                          <ProductCard
-                            product={product}
-                            key={
-                              product.id ||
-                              `product-${pageIndex}-${productIndex}`
-                            }
-                          />
-                        ))
-                      : null}
-                  </div>
-                ))}
-              </div>
-              {isFetchingNextPage ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Spinner size="lg" />
-                </div>
-              ) : null}
-              <Footer />
-            </InfiniteScroll>
-          ) : null}
-        </div>
+        <>
+          {/* Product Count */}
+          <div className="px-4">
+            <p className="text-sm text-muted-foreground">
+              {products.length} product{products.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
+
+          {/* Products Grid */}
+          <div className="px-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8">
+              <Pagination
+                total={totalPages}
+                initialPage={currentPage}
+                page={currentPage}
+                onChange={handlePageChange}
+                showControls
+                variant="flat"
+                classNames={{
+                  cursor: 'bg-black text-white',
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
+
+      <Footer />
     </section>
   );
 }

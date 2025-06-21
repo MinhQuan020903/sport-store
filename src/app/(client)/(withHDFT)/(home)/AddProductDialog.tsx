@@ -73,10 +73,12 @@ const AddProductDialog = () => {
       onToggleSuccess();
       resetFormAndState();
 
+      console.log('quantity: ', data.quantity);
+      console.log('selectedSize: ', selectedSize);
+
       await onAddToCart({
-        data: selectedProduct,
         quantity: data.quantity,
-        selectedSize: selectedSize,
+        selectedSizeId: selectedSize,
       });
     } catch (error) {
       console.error('Failed to add product to cart:', error);

@@ -20,12 +20,28 @@ function LeftCart({ checkedItems, setCheckedItems }) {
   useEffect(() => {
     if (cartLineItems?.length > 0) {
       setIsLoading(false);
+
+      // Initialize checked items
+      const initialCheckedItems = {};
+      cartLineItems.forEach((item) => {
+        const itemKey = item.id
+          ? `${item.id}-${item.productName || ''}-${item.selectedSize || ''}`
+          : `${item?.data?.id}-${item?.data?.name || ''}-${
+              item?.selectedSize || ''
+            }`;
+
+        initialCheckedItems[itemKey] = item;
+      });
+
+      // Only set checked items if empty to avoid overriding user selections
+      if (Object.keys(checkedItems).length === 0) {
+        setCheckedItems(initialCheckedItems);
+      }
     }
     console.log(
       '🚀 ~ file: LeftCart.tsx:55 ~ useEffect ~ isLoading:',
       isLoading
     );
-    // Nếu cartLineItems đã sẵn sàng, đặt isLoading thành false
   }, [cartLineItems]);
 
   return (
