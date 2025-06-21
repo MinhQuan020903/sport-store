@@ -3,71 +3,45 @@ import { CommonSvg } from '@/assets/CommonSvg';
 import { Skeleton } from '@/components/ui/skeleton';
 import React from 'react';
 
-const ProductreviewRatingData = ({ reviewRatingData }) => {
+const ProductReviewRating = ({ reviewRatingData }) => {
   const averageRating = () => {
-    if (reviewRatingData) {
+    if (reviewRatingData && reviewRatingData.totalReview > 0) {
       const totalStar =
-        reviewRatingData?.totalFiveStar * 5 +
-        reviewRatingData?.totalFourStar * 4 +
-        reviewRatingData?.totalThreeStar * 3 +
-        reviewRatingData?.totalTwoStar * 2 +
-        reviewRatingData?.totalOneStar;
-      return (totalStar / reviewRatingData?.totalReview).toFixed(1);
+        reviewRatingData.totalFiveStar * 5 +
+        reviewRatingData.totalFourStar * 4 +
+        reviewRatingData.totalThreeStar * 3 +
+        reviewRatingData.totalTwoStar * 2 +
+        reviewRatingData.totalOneStar;
+      return (totalStar / reviewRatingData.totalReview).toFixed(1);
     }
+    return '0.0';
   };
 
-  const fiveStarPercentage = () => {
-    if (reviewRatingData) {
-      const percentage = (
-        (reviewRatingData.totalFiveStar / reviewRatingData.totalReview) *
-        100
-      ).toFixed(1);
-      return `${percentage}%`;
+  const calculatePercentage = (count) => {
+    if (reviewRatingData && reviewRatingData.totalReview > 0) {
+      return ((count / reviewRatingData.totalReview) * 100).toFixed(1) + '%';
     }
-  };
-  const fourStarPercentage = () => {
-    if (reviewRatingData) {
-      const percentage = (
-        (reviewRatingData.totalFourStar / reviewRatingData.totalReview) *
-        100
-      ).toFixed(1);
-      return `${percentage}%`;
-    }
-  };
-  const threeStarPercentage = () => {
-    if (reviewRatingData) {
-      const percentage = (
-        (reviewRatingData.totalThreeStar / reviewRatingData.totalReview) *
-        100
-      ).toFixed(1);
-      return `${percentage}%`;
-    }
-  };
-  const twoStarPercentage = () => {
-    if (reviewRatingData) {
-      const percentage = (
-        (reviewRatingData.totalTwoStar / reviewRatingData.totalReview) *
-        100
-      ).toFixed(1);
-      return `${percentage}%`;
-    }
-  };
-  const oneStarPercentage = () => {
-    if (reviewRatingData) {
-      const percentage = (
-        (reviewRatingData.totalOneStar / reviewRatingData.totalReview) *
-        100
-      ).toFixed(1);
-      return `${percentage}%`;
-    }
+    return '0%';
   };
 
+  const fiveStarPercentage = () =>
+    calculatePercentage(reviewRatingData?.totalFiveStar || 0);
+  const fourStarPercentage = () =>
+    calculatePercentage(reviewRatingData?.totalFourStar || 0);
+  const threeStarPercentage = () =>
+    calculatePercentage(reviewRatingData?.totalThreeStar || 0);
+  const twoStarPercentage = () =>
+    calculatePercentage(reviewRatingData?.totalTwoStar || 0);
+  const oneStarPercentage = () =>
+    calculatePercentage(reviewRatingData?.totalOneStar || 0);
+
+  const ratingValue = averageRating();
   const starArray = Array.from(
-    { length: Math.round(averageRating() as number) },
+    { length: Math.round(parseFloat(ratingValue)) },
     (_, index) => index + 1
   );
   const blankStarArray = Array.from(
-    { length: 5 - Math.round(averageRating() as number) },
+    { length: 5 - Math.round(parseFloat(ratingValue)) },
     (_, index) => index + 1
   );
 
@@ -82,22 +56,16 @@ const ProductreviewRatingData = ({ reviewRatingData }) => {
                 <div className="flex flex-col p-1 w-full gap-[15px] items-center justify-center">
                   <div>
                     <div className="flex flex-row p-1 w-full gap-4 items-center justify-center">
-                      {starArray.map((item) => {
-                        return (
-                          <div key={starArray.indexOf(item)}>
-                            {' '}
-                            {CommonSvg.startFilled('yellow', 6, 6)}
-                          </div>
-                        );
-                      })}
-                      {blankStarArray.map((item) => {
-                        return (
-                          <div key={starArray.indexOf(item)}>
-                            {' '}
-                            {CommonSvg.startFilled('red', 6, 6)}
-                          </div>
-                        );
-                      })}
+                      {starArray.map((_, index) => (
+                        <div key={`filled-star-${index}`}>
+                          {CommonSvg.startFilled('yellow', 6, 6)}
+                        </div>
+                      ))}
+                      {blankStarArray.map((_, index) => (
+                        <div key={`empty-star-${index}`}>
+                          {CommonSvg.startFilled('red', 6, 6)}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex flex-row p-1 w-full items-center justify-center">
@@ -280,22 +248,16 @@ const ProductreviewRatingData = ({ reviewRatingData }) => {
             <div className="flex flex-col p-1 w-full gap-[15px] items-center justify-center">
               <div>
                 <div className="flex flex-row p-1 w-full gap-4 items-center justify-center">
-                  {starArray.map((item) => {
-                    return (
-                      <div key={starArray.indexOf(item)}>
-                        {' '}
-                        {CommonSvg.startFilled('black', 9, 9)}
-                      </div>
-                    );
-                  })}
-                  {blankStarArray.map((item) => {
-                    return (
-                      <div key={starArray.indexOf(item)}>
-                        {' '}
-                        {CommonSvg.startFilled('gray', 9, 9)}
-                      </div>
-                    );
-                  })}
+                  {starArray.map((_, index) => (
+                    <div key={`filled-star-${index}`}>
+                      {CommonSvg.startFilled('black', 9, 9)}
+                    </div>
+                  ))}
+                  {blankStarArray.map((_, index) => (
+                    <div key={`empty-star-${index}`}>
+                      {CommonSvg.startFilled('gray', 9, 9)}
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="flex flex-row p-1 w-full items-center justify-center">
@@ -469,4 +431,4 @@ const ProductreviewRatingData = ({ reviewRatingData }) => {
   );
 };
 
-export default ProductreviewRatingData;
+export default ProductReviewRating;
