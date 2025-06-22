@@ -23,6 +23,7 @@ import { AiOutlineHeart } from 'react-icons/ai';
 import { CartSheet } from '../CartSheet';
 import { Badge } from '../ui/badge';
 import Logo from '../logo';
+import { ClipboardList } from 'lucide-react'; // Or another suitable icon
 
 const NavigationMenuDemo = ({ session }) => {
   const [user] = useState(session?.user);
@@ -212,6 +213,12 @@ const NavigationMenuDemo = ({ session }) => {
                 {
                   <AiOutlineHeart className="text-slate-600 stroke-zinc-950 w-4 h-4 " />
                 }
+              </Button>
+            </Link>
+            <Link href="/orders">
+              <Button variant="outline" size="icon" className="relative">
+                <ClipboardList className="h-[1.2rem] w-[1.2rem]" />
+                <span className="sr-only">Orders</span>
               </Button>
             </Link>
             <CartSheet />
