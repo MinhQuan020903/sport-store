@@ -16,7 +16,7 @@ const GuestInformationForm = ({
 }) => {
   return (
     <div className="flex flex-col h-full justify-between">
-      <div className="w-[95%] h-full flex flex-col gap-y-6">
+      <div className="w-full h-full flex flex-col gap-y-6">
         <Input
           placeholder="Enter your Full name"
           value={fullName}

@@ -18,15 +18,10 @@ export const Checkout = () => {
 
       {isModalOpen && (
         <div>
-          {/* <CheckoutForm
+          {/* <CheckoutModal
             isModalOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
           /> */}
-
-          <CheckoutModal
-            isModalOpen={isModalOpen}
-            setIsModalOpen={setIsModalOpen}
-          />
         </div>
       )}
     </div>

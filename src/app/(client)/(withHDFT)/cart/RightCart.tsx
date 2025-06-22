@@ -1,17 +1,23 @@
-"use client";
+'use client';
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/hooks/useCart";
-import { currencyFormat } from "@/lib/utils";
-import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import CheckoutModal from "./checkout/CheckoutModal";
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useCart } from '@/hooks/useCart';
+import { currencyFormat } from '@/lib/utils';
+import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
+import CheckoutModal from './checkout/CheckoutModal';
 
 function RightCart({ checkedItems }) {
   const { cart } = useCart();
   const [total, setTotal] = useState(0);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [shippingCost, setShippingCost] = useState(0);
+
+  useEffect(() => {
+    const randomShipping = Math.floor(Math.random() * 10) + 1;
+    setShippingCost(randomShipping);
+  }, []);
 
   useEffect(() => {
     const newTotal = Object.values(checkedItems)
@@ -23,27 +29,33 @@ function RightCart({ checkedItems }) {
     setTotal(newTotal);
   }, [checkedItems]);
 
+  // Calculate the VAT (10% of subtotal)
+  const vat = total * 0.1;
+
+  // Calculate final total including shipping and VAT
+  const finalTotal = total + shippingCost + vat;
+
   return (
     <div className="sticky bottom-0 lg:top-[100px] z-20 bg-white lg:bg-transparent">
       <h2 className="text-lg font-semibold">Tổng kết</h2>
       <div className="grid gap-1.5 lg:gap-4 pr-6 text-sm ">
         <Separator className="mb-2" />
-        {/* <div className="flex">
-          <span className="flex-1">Subtotal</span>
-          <span>{currencyFormat(10000000)}</span>
-        </div> */}
         <div className="flex">
-          <span className="flex-1">Giao hàng</span>
-          <span>Miễn phí</span>
+          <span className="flex-1">Tạm tính</span>
+          <span>{currencyFormat(total)}</span>
         </div>
         <div className="flex">
-          <span className="flex-1">Thuế</span>
-          <span>Miễn phí</span>
+          <span className="flex-1">Giao hàng</span>
+          <span>{currencyFormat(shippingCost)}</span>
+        </div>
+        <div className="flex">
+          <span className="flex-1">VAT (10%)</span>
+          <span>{currencyFormat(vat)}</span>
         </div>
         <Separator className="mt-2" />
         <div className="flex">
           <span className="flex-1">Tổng tiền</span>
-          <span>{currencyFormat(total)}</span>
+          <span>{currencyFormat(finalTotal)}</span>
         </div>
         <div>
           <Button
@@ -58,14 +70,9 @@ function RightCart({ checkedItems }) {
 
           {isModalOpen && (
             <div>
-              {/* <CheckoutForm
-            isModalOpen={isModalOpen}
-            setIsModalOpen={setIsModalOpen}
-          /> */}
-
               <CheckoutModal
                 checkedItems={checkedItems}
-                total={total}
+                total={finalTotal}
                 isModalOpen={isModalOpen}
                 setIsModalOpen={setIsModalOpen}
               />
