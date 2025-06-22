@@ -1,16 +1,18 @@
-'use client';
+"use client";
 
-import { AddAddress } from '@/app/(authenticated)/user/profile/AddAddress';
-import Loader from '@/components/Loader';
-import { SelectAddress } from '@/components/select-address';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUser } from '@/hooks/useUser';
-import { Select, SelectItem } from '@nextui-org/react';
-import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import React, { useEffect, useState } from 'react';
+import { AddAddress } from "@/app/(authenticated)/user/profile/AddAddress";
+import Loader from "@/components/Loader";
+import { SelectAddress } from "@/components/select-address";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useOrder from "@/hooks/useOrder";
+import { useUser } from "@/hooks/useUser";
+import { Select, SelectItem } from "@nextui-org/react";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const AuthInformationForm = ({
   setPage,
@@ -19,6 +21,10 @@ const AuthInformationForm = ({
   setUserFullname,
   setUserAddress,
   setUserEmail,
+  email,
+  fullName,
+  checkedItems,
+  setOrderId,
 }) => {
   const [addressValue, setAddressValue] = useState(
     addresses?.[0]?.addressValue
@@ -27,14 +33,16 @@ const AuthInformationForm = ({
     new Set([addresses?.[0]?.addressValue?.toString()])
   );
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [fullName, setFullName] = useState(user?.name);
-  const [email, setEmail] = useState(user?.email);
+
   useEffect(() => {
     if (selectedType.size > 0) {
       const noiThatValueArray = Array.from(selectedType);
       setUserAddress(noiThatValueArray?.[0]);
     }
   }, [selectedType]);
+
+  const { onCreateOrder } = useOrder();
+
   return user && addresses ? (
     <div className="flex flex-col h-full justify-between">
       <div className="w-[95%] h-full flex flex-col gap-y-6">
@@ -63,12 +71,10 @@ const AuthInformationForm = ({
 
         <Label>Địa chỉ</Label>
         <Select
-          key={'method'}
-          radius={'md'}
-          label="Địa chỉ"
+          key={"method"}
+          radius={"md"}
           disallowEmptySelection={true}
           autoFocus={false}
-          placeholder="Select address"
           selectedKeys={selectedType}
           onSelectionChange={(keys) => {
             setSelectedType(keys);
@@ -77,14 +83,18 @@ const AuthInformationForm = ({
         >
           {addresses?.map((item) => {
             return (
-              <SelectItem key={item?.addressValue} value={item.addressValue}>
+              <SelectItem
+                className="bg-white"
+                key={item?.addressValue}
+                value={item.addressValue}
+              >
                 {item?.addressValue}
               </SelectItem>
             );
           })}
         </Select>
         <Button
-          disabled={!addressValue || !fullName || !email}
+          disabled={!fullName || !email}
           className="w-32"
           onClick={() => {
             setIsAddressModalOpen(true);
@@ -100,8 +110,19 @@ const AuthInformationForm = ({
       <div className="mt-20 w-full flex justify-center">
         <Button
           className="w-32"
-          onClick={() => {
-            setPage('2');
+          onClick={async () => {
+            try {
+              var res = await onCreateOrder({
+                shippingType: "default",
+                cartItemIds: Object.keys(checkedItems),
+              });
+
+              setOrderId(res.id);
+
+              setPage("2");
+            } catch (error) {
+              toast("Có lỗi xảy ra.");
+            }
           }}
         >
           Tiếp tục

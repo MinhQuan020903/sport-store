@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { CartLineItems } from '@/components/CartLineItems';
-import { useCart } from '@/hooks/useCart';
-import React, { useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CartLineItems } from "@/components/CartLineItems";
+import { useCart } from "@/hooks/useCart";
+import React, { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LeftCart({ checkedItems, setCheckedItems }) {
   const { cart } = useCart();
@@ -24,12 +24,7 @@ function LeftCart({ checkedItems, setCheckedItems }) {
       // Initialize checked items
       const initialCheckedItems = {};
       cartLineItems.forEach((item) => {
-        const itemKey = item.id
-          ? `${item.id}-${item.productName || ''}-${item.selectedSize || ''}`
-          : `${item?.data?.id}-${item?.data?.name || ''}-${
-              item?.selectedSize || ''
-            }`;
-
+        const itemKey = item.id;
         initialCheckedItems[itemKey] = item;
       });
 
@@ -38,10 +33,6 @@ function LeftCart({ checkedItems, setCheckedItems }) {
         setCheckedItems(initialCheckedItems);
       }
     }
-    console.log(
-      '🚀 ~ file: LeftCart.tsx:55 ~ useEffect ~ isLoading:',
-      isLoading
-    );
   }, [cartLineItems]);
 
   return (

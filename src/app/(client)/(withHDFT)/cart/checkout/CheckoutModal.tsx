@@ -1,18 +1,18 @@
-import DialogCustom from '@/components/ui/dialogCustom';
-import { Tabs, Tab, Card, CardBody } from '@nextui-org/react';
-import { useEffect, useState } from 'react';
-import MultiStepProgressBar from './components/childComponents/MultiProgressBar';
-import GuestInformationForm from './components/GuestInformationForm';
-import { Button } from '@/components/ui/button';
-import { PaymentForm } from './components/PaymentForm';
-import { useSession } from 'next-auth/react';
-import AuthInformationForm from './components/AuthInformationForm';
-import { useUser } from '@/hooks/useUser';
-import { useQuery } from '@tanstack/react-query';
-import { getRequest } from '@/lib/fetch';
-import { Label } from '@/components/ui/label';
-import { currencyFormat } from '@/lib/utils';
-import Loader from '@/components/Loader';
+import DialogCustom from "@/components/ui/dialogCustom";
+import { Tabs, Tab, Card, CardBody } from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import MultiStepProgressBar from "./components/childComponents/MultiProgressBar";
+import GuestInformationForm from "./components/GuestInformationForm";
+import { Button } from "@/components/ui/button";
+import { PaymentForm } from "./components/PaymentForm";
+import { useSession } from "next-auth/react";
+import AuthInformationForm from "./components/AuthInformationForm";
+import { useUser } from "@/hooks/useUser";
+import { useQuery } from "@tanstack/react-query";
+import { getRequest } from "@/lib/fetch";
+import { Label } from "@/components/ui/label";
+import { currencyFormat } from "@/lib/utils";
+import Loader from "@/components/Loader";
 
 interface CheckoutModalProps {
   isModalOpen: boolean;
@@ -27,39 +27,27 @@ const CheckoutModal = ({
   checkedItems,
   total,
 }: CheckoutModalProps) => {
-  console.log('🚀 ~ file: CheckoutModal.tsx:27 ~ total:', total);
-  console.log('🚀 ~ file: CheckoutModal.tsx:27 ~ checkedItems:', checkedItems);
-  const [page, setPage] = useState('1');
-  const [userFullName, setUserFullName] = useState('');
-  const [userAddress, setUserAddress] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const session = useSession();
-  const { onGetUserDetail } = useUser();
-  const { data: userInfo, isLoading: isLoadingUserInfo } = useQuery({
-    queryKey: ['userInfo', session?.data?.user?.id],
-    queryFn: async () => {
-      const res = await onGetUserDetail(session?.data?.user?.id);
-      return res;
-    },
-    enabled: !!session?.data?.user?.id,
-  });
-  const { data: userAddresses, isLoading: isLoadingUserAddresses } = useQuery(
-    ['userAddresses', session?.data?.user?.id],
-    async () => {
-      const res = await getRequest({
-        endPoint: `/api/user/address?id=${session?.data?.user?.id}`,
-      });
-      return res;
-    },
-    { enabled: !!session?.data?.user?.id }
-  );
+  const [page, setPage] = useState("1");
+  const [userFullName, setUserFullName] = useState("");
+  const [userAddress, setUserAddress] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [orderId, setOrderId] = useState("");
 
-  useEffect(() => {
-    if (userInfo) {
-      setUserFullName(userInfo?.name);
-      setUserEmail(userInfo?.email);
-    }
-  }, [userInfo]);
+  const { onGetMe } = useUser();
+
+  const { data: userInfo, isLoading: isLoadingUserInfo } = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => {
+      const res = await onGetMe();
+      return res;
+    },
+    onSuccess(data) {
+      setUserFullName(data?.username);
+      setUserEmail(data?.email);
+    },
+    enabled: isModalOpen,
+  });
+
   return (
     <div className="w-full h-full px-1">
       <DialogCustom
@@ -69,8 +57,7 @@ const CheckoutModal = ({
         warningOnClose={true}
         callBack={() => {}}
       >
-        {(isLoadingUserInfo || isLoadingUserAddresses) &&
-        session?.data?.user?.id ? (
+        {isLoadingUserInfo ? (
           <div className="flex items-center justify-center h-full w-full">
             <Loader />
           </div>
@@ -81,25 +68,29 @@ const CheckoutModal = ({
             <Tabs
               selectedKey={page}
               classNames={{
-                tabList: 'gap-6 w-full  ',
+                tabList: "gap-6 w-full  ",
               }}
               aria-label="Options"
             >
-              <Tab key={'1'} title="Thông tin">
-                {userInfo && userAddresses ? (
+              <Tab key={"1"} title="Thông tin">
+                {userInfo ? (
                   <AuthInformationForm
                     setUserEmail={setUserEmail}
                     setUserFullname={setUserFullName}
                     setUserAddress={setUserAddress}
+                    email={userEmail}
+                    fullName={userFullName}
                     user={userInfo}
-                    addresses={userAddresses}
+                    addresses={[]}
                     setPage={setPage}
+                    checkedItems={checkedItems}
+                    setOrderId={setOrderId}
                   />
                 ) : (
                   <GuestInformationForm
                     email={userEmail}
-                    setEmail={setUserEmail}
                     fullName={userFullName}
+                    setEmail={setUserEmail}
                     setFullName={setUserFullName}
                     addressValue={userAddress}
                     setAddressValue={setUserAddress}
@@ -107,20 +98,14 @@ const CheckoutModal = ({
                   />
                 )}
               </Tab>
-              <Tab key={'2'} title="Thanh toán">
+              <Tab key={"2"} title="Thanh toán">
                 <div className="w-full h-full">
-                  <PaymentForm
-                    userFullName={userFullName}
-                    userAddress={userAddress}
-                    userEmail={userEmail}
-                    checkedItems={checkedItems}
-                    total={total}
-                  />
+                  <PaymentForm orderId={orderId} />
                   <div className="w-full flex flex-row items-center justify-center gap-x-10 ">
                     <Button
                       className="w-32 mt-10"
                       onClick={() => {
-                        setPage('1');
+                        setPage("1");
                       }}
                     >
                       Quay lại
@@ -128,7 +113,7 @@ const CheckoutModal = ({
                   </div>
                 </div>
               </Tab>
-              <Tab key={'3'} title="Hoàn tất">
+              <Tab key={"3"} title="Hoàn tất">
                 <Card>
                   <CardBody>
                     Xin cảm ơn quý khách vì đã mua hàng! Chúc quý khách có những

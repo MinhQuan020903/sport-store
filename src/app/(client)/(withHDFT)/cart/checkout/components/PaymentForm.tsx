@@ -1,26 +1,18 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 
-import { Select, SelectItem } from '@nextui-org/react';
-import { StripeCheckout } from './childComponents/StripeCheckout';
-import VnPayCheckout from './childComponents/VnPayCheckout';
+import { Select, SelectItem } from "@nextui-org/react";
+import { StripeCheckout } from "./childComponents/StripeCheckout";
+import VnPayCheckout from "./childComponents/VnPayCheckout";
+import MoMoCheckout from "./childComponents/MoMoCheckout";
 
-const checkOutConst = [
-  { value: 'Stripe' },
-  { value: 'Block chain Wallet' },
-  { value: 'VnPay' },
-];
-export const PaymentForm = ({
-  checkedItems,
-  total,
-  userFullName,
-  userAddress,
-  userEmail,
-}) => {
+const checkOutConst = [{ value: "Momo" }, { value: "VnPay" }];
+
+export const PaymentForm = ({ orderId }) => {
   const [selectedType, setSelectedType] = React.useState(new Set([]));
   const [typeTouched, setTypeTouched] = React.useState(false);
-  const [method, setMethod] = React.useState('');
+  const [method, setMethod] = React.useState("");
   const isTypeValid = selectedType.size > 0;
   useEffect(() => {
     if (selectedType) {
@@ -32,14 +24,14 @@ export const PaymentForm = ({
   return (
     <div className="w-full h-full px-1">
       <Select
-        key={'method'}
-        radius={'md'}
+        key={"method"}
+        radius={"md"}
         label="Phương thức thanh toán"
         isInvalid={isTypeValid || !typeTouched ? false : true}
         errorMessage={
           isTypeValid || !typeTouched
-            ? ''
-            : 'Vui lòng chọn phương thức thanh toán'
+            ? ""
+            : "Vui lòng chọn phương thức thanh toán"
         }
         autoFocus={false}
         placeholder="Chọn phương thức thanh toán"
@@ -56,18 +48,8 @@ export const PaymentForm = ({
           </SelectItem>
         ))}
       </Select>
-      {method === 'Stripe' && (
-        <StripeCheckout
-          userAddress={userAddress}
-          userFullName={userFullName}
-          userEmail={userEmail}
-          checkedItems={checkedItems}
-          total={total}
-        />
-      )}
-      {method === 'VnPay' && (
-        <VnPayCheckout checkedItems={checkedItems} total={total} />
-      )}
+      {method === "Momo" && <MoMoCheckout orderId={orderId} />}
+      {method === "VnPay" && <VnPayCheckout orderId={orderId} />}
     </div>
   );
 };
