@@ -75,13 +75,13 @@ const CheckoutModal = ({
               <Tab key={"1"} title="Thông tin">
                 {userInfo ? (
                   <AuthInformationForm
+                    setUserAddress={setUserAddress}
+                    userAddress={userAddress}
                     setUserEmail={setUserEmail}
                     setUserFullname={setUserFullName}
-                    setUserAddress={setUserAddress}
                     email={userEmail}
                     fullName={userFullName}
                     user={userInfo}
-                    addresses={[]}
                     setPage={setPage}
                     checkedItems={checkedItems}
                     setOrderId={setOrderId}

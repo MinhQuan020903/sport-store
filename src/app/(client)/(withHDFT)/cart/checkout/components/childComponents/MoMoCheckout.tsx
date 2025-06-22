@@ -12,10 +12,12 @@ const MoMoCheckout = ({ orderId }) => {
 
   useEffect(() => {
     const getPaymentUrl = async () => {
-      await onGetPaymentUrl({
+      const res = await onGetPaymentUrl({
         paymentMethod: EPaymentMethod.MoMo,
         orderId: orderId,
       });
+      setPaymentUrl(res.paymentUrl);
+      setIsLoading(false);
     };
     getPaymentUrl();
   }, []);

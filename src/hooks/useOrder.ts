@@ -1,7 +1,7 @@
-import axios from 'axios';
-import { useSession } from 'next-auth/react';
-import Cookies from 'js-cookie';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import Cookies from "js-cookie";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // DTOs based on the provided models
 export interface OrderProductDto {
@@ -25,6 +25,11 @@ export interface OrderDto {
   orderState: string;
   createdAt: string;
   products: OrderProductDto[];
+  address: {
+    receiverName: string;
+    receiverEmail: string;
+    detailAddress: string;
+  };
 }
 
 export interface OrderParams {
@@ -35,7 +40,7 @@ export interface OrderParams {
   minPrice?: number;
   maxPrice?: number;
   orderBy?: string;
-  sortBy?: 'asc' | 'desc';
+  sortBy?: "asc" | "desc";
 }
 
 export interface OrdersResponse {
@@ -44,7 +49,7 @@ export interface OrdersResponse {
   totalPages: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const useOrder = () => {
   const { data: session, status } = useSession();
@@ -53,11 +58,11 @@ const useOrder = () => {
   // Get auth headers for authenticated requests
   const getAuthHeaders = () => {
     // Try to get token from cookie first, then fallback to session
-    const tokenFromCookie = Cookies.get('access_token');
+    const tokenFromCookie = Cookies.get("access_token");
     const token = tokenFromCookie || session?.accessToken;
 
     if (!token) {
-      console.warn('No authentication token found');
+      console.warn("No authentication token found");
       return {};
     }
 
@@ -68,7 +73,7 @@ const useOrder = () => {
 
   // Check if user is authenticated
   const isAuthenticated =
-    status === 'authenticated' || !!Cookies.get('access_token');
+    status === "authenticated" || !!Cookies.get("access_token");
 
   // Fetch orders with optional filtering
   const fetchOrders = async (params?: OrderParams) => {
@@ -92,7 +97,7 @@ const useOrder = () => {
 
       return response.data;
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
       return null;
     }
   };
@@ -100,7 +105,7 @@ const useOrder = () => {
   // Get orders with react-query
   const useOrders = (params?: OrderParams) => {
     return useQuery({
-      queryKey: ['orders', params],
+      queryKey: ["orders", params],
       queryFn: () => fetchOrders(params),
       enabled: isAuthenticated,
       staleTime: 1000 * 60 * 5,
@@ -126,7 +131,7 @@ const useOrder = () => {
   // Get order by ID with react-query
   const useOrderById = (id: string) => {
     return useQuery({
-      queryKey: ['order', id],
+      queryKey: ["order", id],
       queryFn: () => fetchOrderById(id),
       enabled: !!id && isAuthenticated,
       staleTime: 1000 * 60 * 5, // 5 minutes
@@ -136,15 +141,24 @@ const useOrder = () => {
   const onCreateOrder = async ({
     shippingType,
     cartItemIds,
+    receiverEmail,
+    receiverName,
+    detailAddress,
   }: {
     cartItemIds: string[];
     shippingType: string;
+    receiverName: string;
+    receiverEmail: string;
+    detailAddress: string;
   }) => {
     const res = await axios.post(
       `${process.env.NEXT_PUBLIC_SITE_URL}/api/orders`,
       {
         shippingType,
         cartItemIds,
+        receiverEmail,
+        receiverName,
+        detailAddress,
       },
       {
         headers: {

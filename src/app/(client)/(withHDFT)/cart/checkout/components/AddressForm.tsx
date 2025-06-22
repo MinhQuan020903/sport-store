@@ -1,25 +1,27 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { Select, SelectItem } from '@nextui-org/react';
-import { getRequest } from '@/lib/fetch';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { useSession } from 'next-auth/react';
-import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import Loader from '@/components/Loader';
+import React, { useEffect } from "react";
+import { getRequest } from "@/lib/fetch";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import Loader from "@/components/Loader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export const AddressForm = ({ onComplete }) => {
+export const AddressForm = ({ onComplete, enable }) => {
   const session = useSession();
-  const [selectedProvince, setSelectedProvince] = React.useState(new Set([]));
-  const [selectedDistrict, setSelectedDistrict] = React.useState(new Set([]));
-  const [selectedWard, setSelectedWard] = React.useState(new Set([]));
-
-  const [provinceTouched, setProvinceTouched] = React.useState(false);
-  const [districtTouched, setDistrictTouched] = React.useState(false);
-  const [wardTouched, setWardTouched] = React.useState(false);
+  const [selectedProvince, setSelectedProvince] = React.useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = React.useState<string>("");
+  const [selectedWard, setSelectedWard] = React.useState<string>("");
 
   const [isLoadingProvince, setIsLoadingProvince] = React.useState(false);
   const [isLoadingDistrict, setIsLoadingDistrict] = React.useState(false);
@@ -29,16 +31,15 @@ export const AddressForm = ({ onComplete }) => {
   const [districts, setDistrict] = React.useState([]);
   const [wards, setWard] = React.useState([]);
 
-  const [streetValue, setStreetValue] = React.useState('');
-  const [houseNumberValue, setHouseNumberValue] = React.useState('');
-  const queryClient = useQueryClient();
+  const [streetValue, setStreetValue] = React.useState("");
+  const [houseNumberValue, setHouseNumberValue] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
   useEffect(() => {
     async function getProvince() {
       setIsLoadingProvince(true);
       const res = await getRequest({
-        endPoint: 'https://provinces.open-api.vn/api/p/',
+        endPoint: "https://provinces.open-api.vn/api/p/",
       });
 
       setProvince(res);
@@ -50,16 +51,15 @@ export const AddressForm = ({ onComplete }) => {
   useEffect(() => {
     setDistrict([]);
     setWard([]);
-    setSelectedDistrict(new Set([]));
-    setSelectedWard(new Set([]));
+    setSelectedDistrict("");
+    setSelectedWard("");
 
     async function getDistrict() {
-      if (selectedProvince.size > 0) {
+      if (!!selectedProvince) {
         setIsLoadingDistrict(true);
-        const valuesArray = Array.from(selectedProvince);
-        const provinceCode = valuesArray[0];
+
         const res = await getRequest({
-          endPoint: `https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`,
+          endPoint: `https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`,
         });
         setDistrict(res?.districts);
         setIsLoadingDistrict(false);
@@ -70,15 +70,14 @@ export const AddressForm = ({ onComplete }) => {
 
   useEffect(() => {
     setWard([]);
-    setSelectedWard(new Set([]));
+    setSelectedWard("");
 
     async function getWard() {
-      if (selectedDistrict.size > 0) {
+      if (!!selectedDistrict) {
         setIsLoadingWard(true);
-        const valuesArray = Array.from(selectedDistrict);
-        const districtCode = valuesArray[0];
+
         const res = await getRequest({
-          endPoint: `https://provinces.open-api.vn/api/d/${districtCode}?depth=2`,
+          endPoint: `https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`,
         });
         setWard(res?.wards);
         setIsLoadingWard(false);
@@ -88,34 +87,30 @@ export const AddressForm = ({ onComplete }) => {
     getWard();
   }, [selectedDistrict]);
 
-  const isProvinceValid = selectedProvince.size > 0;
-  const isDistrictValid = selectedDistrict.size > 0;
-  const isWardValid = selectedWard.size > 0;
+  const isProvinceValid = !!selectedProvince;
+  const isDistrictValid = !!selectedDistrict;
+  const isWardValid = !!selectedWard;
 
   const onSubmit = () => {
-    const valuesArrayProvince = Array.from(selectedProvince);
-    const provinceCode = valuesArrayProvince[0];
     const provinceValue = provinces.find(
-      (province) => province.code == provinceCode
+      (province) => province.code == selectedProvince
     )?.name;
 
-    const valuesArrayDistrict = Array.from(selectedDistrict);
-    const districtCode = valuesArrayDistrict[0];
     const districtValue = districts.find(
-      (district) => district.code == districtCode
+      (district) => district.code == selectedDistrict
     )?.name;
 
-    const valuesArrayWard = Array.from(selectedWard);
-    const wardCode = valuesArrayWard[0];
-    const wardValue = wards.find((ward) => ward.code == wardCode)?.name;
+    const wardValue = wards.find((ward) => ward.code == selectedWard)?.name;
 
     // Concatenate all address parts into a single string
     const fullAddressValue = `${houseNumberValue}, ${streetValue}, ${wardValue}, ${districtValue}, ${provinceValue}`;
 
+    console.log(fullAddressValue);
+
     // Just pass the concatenated address back to the parent component
     // instead of making a POST request
     if (onComplete) {
-      onComplete(fullAddressValue);
+      // onComplete(fullAddressValue);
     }
   };
 
@@ -127,78 +122,64 @@ export const AddressForm = ({ onComplete }) => {
     <div className="flex flex-col gap-y-4">
       <div className="w-full flex flex-col gap-4">
         <Select
-          key={'province'}
-          label="Tỉnh / Thành phố"
-          placeholder="Chọn tỉnh/thành phố"
-          isInvalid={isProvinceValid || !provinceTouched ? false : true}
-          errorMessage={
-            isProvinceValid || !provinceTouched
-              ? ''
-              : 'Vui lòng chọn tỉnh/thành phố'
-          }
-          selectedKeys={selectedProvince}
-          isLoading={isLoadingProvince}
-          onSelectionChange={setSelectedProvince}
-          onClose={() => setProvinceTouched(true)}
-          size="sm"
-          className="w-[98%]"
+          key={"province"}
+          value={selectedProvince}
+          onValueChange={setSelectedProvince}
         >
-          {provinces?.map((province) => (
-            <SelectItem key={province.code} value={province.code}>
-              {province.name}
-            </SelectItem>
-          ))}
+          <SelectTrigger className="w-[98%]" disabled={isLoadingProvince}>
+            <SelectValue placeholder="Tỉnh / Thành phố" />
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] overflow-y-scroll">
+            {provinces?.map((province) => (
+              <SelectItem key={province.code} value={province.code}>
+                {province.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
 
         <div className="col-span-1">
           <Select
-            key={'district'}
-            label="Quận / Huyện"
-            placeholder="Chọn quận/huyện"
-            isInvalid={isDistrictValid || !districtTouched ? false : true}
-            errorMessage={
-              isDistrictValid || !districtTouched
-                ? ''
-                : 'Vui lòng chọn quận/huyện'
-            }
-            selectedKeys={selectedDistrict}
-            isLoading={isLoadingDistrict}
-            onSelectionChange={setSelectedDistrict}
-            onClose={() => setDistrictTouched(true)}
-            isDisabled={!isProvinceValid}
-            size="sm"
-            className="w-[98%]"
+            key={"district"}
+            value={selectedDistrict}
+            onValueChange={setSelectedDistrict}
           >
-            {districts?.map((district) => (
-              <SelectItem key={district.code} value={district.code}>
-                {district.name}
-              </SelectItem>
-            ))}
+            <SelectTrigger
+              className="w-[98%]"
+              disabled={isLoadingDistrict || !isProvinceValid}
+            >
+              <SelectValue placeholder="Quận / Huyện" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px] overflow-y-scroll">
+              {districts?.map((district) => (
+                <SelectItem key={district.code} value={district.code}>
+                  {district.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
 
         <div className="col-span-1">
           <Select
-            key={'ward'}
-            label="Phường / Xã"
-            placeholder="Chọn phường/xã"
-            isInvalid={isWardValid || !wardTouched ? false : true}
-            errorMessage={
-              isWardValid || !wardTouched ? '' : 'Vui lòng chọn phường/xã'
-            }
-            selectedKeys={selectedWard}
-            isLoading={isLoadingWard}
-            onSelectionChange={setSelectedWard}
-            onClose={() => setWardTouched(true)}
-            isDisabled={!isDistrictValid}
-            size="sm"
-            className="w-[98%]"
+            key={"ward"}
+            value={selectedWard}
+            onValueChange={setSelectedWard}
+            disabled={isLoadingWard}
           >
-            {wards?.map((ward) => (
-              <SelectItem key={ward.code} value={ward.code}>
-                {ward.name}
-              </SelectItem>
-            ))}
+            <SelectTrigger
+              className="w-[98%]"
+              disabled={isLoadingWard || !isDistrictValid}
+            >
+              <SelectValue placeholder="Phường / Xã" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px] overflow-y-scroll">
+              {wards?.map((ward) => (
+                <SelectItem key={ward.code} value={ward.code}>
+                  {ward.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
       </div>
@@ -235,7 +216,8 @@ export const AddressForm = ({ onComplete }) => {
             !isDistrictValid ||
             !isWardValid ||
             !streetValue ||
-            !houseNumberValue
+            !houseNumberValue ||
+            enable
           }
           onClick={onSubmit}
         >

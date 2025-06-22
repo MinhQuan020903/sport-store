@@ -1,55 +1,50 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
+import React from "react";
+import VnPayCheckout from "./childComponents/VnPayCheckout";
+import MoMoCheckout from "./childComponents/MoMoCheckout";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { EPaymentMethod } from "@/hooks/usePayment";
 
-import { Select, SelectItem } from '@nextui-org/react';
-import { StripeCheckout } from './childComponents/StripeCheckout';
-import VnPayCheckout from './childComponents/VnPayCheckout';
-import MoMoCheckout from './childComponents/MoMoCheckout';
-
-const checkOutConst = [{ value: 'Momo' }, { value: 'VnPay' }];
+const checkOutConst = [
+  { value: EPaymentMethod.MoMo, label: "Momo" },
+  { value: EPaymentMethod.VNPay, label: "VNPay" },
+];
 
 export const PaymentForm = ({ orderId }) => {
-  const [selectedType, setSelectedType] = React.useState(new Set([]));
-  const [typeTouched, setTypeTouched] = React.useState(false);
-  const [method, setMethod] = React.useState('');
-  const isTypeValid = selectedType.size > 0;
-  useEffect(() => {
-    if (selectedType) {
-      const noiThatValueArray = Array.from(selectedType);
-      setMethod(noiThatValueArray?.[0]);
-    }
-  }, [selectedType]);
+  const [selectedType, setSelectedType] = React.useState<string>("");
 
   return (
     <div className="w-full h-full px-1">
       <Select
-        key={'method'}
-        radius={'md'}
-        label="Phương thức thanh toán"
-        isInvalid={isTypeValid || !typeTouched ? false : true}
-        errorMessage={
-          isTypeValid || !typeTouched
-            ? ''
-            : 'Vui lòng chọn phương thức thanh toán'
-        }
-        autoFocus={false}
-        placeholder="Chọn phương thức thanh toán"
-        selectedKeys={selectedType}
-        onSelectionChange={(keys) => {
-          setSelectedType(keys);
-        }}
-        onClose={() => setTypeTouched(true)}
-        className="w-[98%]"
+        key={"province"}
+        value={selectedType}
+        onValueChange={setSelectedType}
       >
-        {checkOutConst?.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.value.toString()}
-          </SelectItem>
-        ))}
+        <SelectTrigger className="w-[98%] mb-5">
+          <SelectValue placeholder="Phương thức thanh toán" />
+        </SelectTrigger>
+        <SelectContent className="max-h-[300px] overflow-y-scroll">
+          {checkOutConst?.map((item) => (
+            <SelectItem key={item.value} value={item.value.toString()}>
+              {item.label.toString()}
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
-      {method === 'Momo' && <MoMoCheckout orderId={orderId} />}
-      {method === 'VnPay' && <VnPayCheckout orderId={orderId} />}
+
+      {selectedType === EPaymentMethod.MoMo.toString() && (
+        <MoMoCheckout orderId={orderId} />
+      )}
+      {selectedType === EPaymentMethod.VNPay.toString() && (
+        <VnPayCheckout orderId={orderId} />
+      )}
     </div>
   );
 };

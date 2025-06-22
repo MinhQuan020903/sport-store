@@ -1,18 +1,17 @@
-'use client';
+"use client";
 
-import Loader from '@/components/Loader';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import useOrder from '@/hooks/useOrder';
-import React, { useState } from 'react';
-import toast from 'react-hot-toast';
-import { AddressForm } from './AddressForm';
+import Loader from "@/components/Loader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useOrder from "@/hooks/useOrder";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { AddressForm } from "./AddressForm";
 
 const AuthInformationForm = ({
   setPage,
   user,
-  addresses,
   setUserFullname,
   setUserAddress,
   setUserEmail,
@@ -20,17 +19,33 @@ const AuthInformationForm = ({
   fullName,
   checkedItems,
   setOrderId,
+  userAddress,
 }) => {
-  const [addressValue, setAddressValue] = useState('');
-  const [showAddressForm, setShowAddressForm] = useState(!addressValue);
-
-  const handleAddressComplete = (newAddress) => {
-    setAddressValue(newAddress);
-    setUserAddress(newAddress);
-    setShowAddressForm(false);
-  };
-
   const { onCreateOrder } = useOrder();
+
+  const handleAddressComplete = async (newAddress: string) => {
+    setUserAddress(newAddress);
+
+    try {
+      if (!newAddress) {
+        toast.error("Vui lòng thêm địa chỉ giao hàng");
+        return;
+      }
+
+      var res = await onCreateOrder({
+        shippingType: "default",
+        cartItemIds: Object.keys(checkedItems),
+        receiverName: fullName,
+        receiverEmail: email,
+        detailAddress: newAddress,
+      });
+
+      setOrderId(res.id);
+      setPage("2");
+    } catch (error) {
+      toast.error("Có lỗi xảy ra.");
+    }
+  };
 
   return user ? (
     <div className="flex flex-col h-full justify-between">
@@ -46,7 +61,6 @@ const AuthInformationForm = ({
         <Input
           placeholder="Nhập email"
           value={email}
-          disabled
           onChange={(e) => {
             setUserEmail(e.target.value);
           }}
@@ -56,39 +70,27 @@ const AuthInformationForm = ({
         <div className="w-full flex flex-col">
           <Label>Địa chỉ</Label>
 
-          {!showAddressForm && addressValue ? (
-            <div className="mt-2">
-              <div className="border p-3 rounded-md bg-gray-50">
-                <p>{addressValue}</p>
-              </div>
-              <Button
-                variant="outline"
-                className="w-fit mt-3"
-                onClick={() => setShowAddressForm(true)}
-              >
-                Thay đổi địa chỉ
-              </Button>
+          <div className="w-full flex flex-col mt-2">
+            <div className="flex justify-between mb-2">
+              <h3 className="font-semibold">
+                {userAddress ? "Cập nhật địa chỉ" : "Thêm địa chỉ"}
+              </h3>
             </div>
-          ) : (
-            <div className="w-full flex flex-col mt-2">
-              <div className="flex justify-between mb-2">
-                <h3 className="font-semibold">
-                  {addressValue ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ'}
-                </h3>
-              </div>
-              <AddressForm onComplete={handleAddressComplete} />
-            </div>
-          )}
+            <AddressForm
+              onComplete={handleAddressComplete}
+              enable={!!fullName || !!email}
+            />
+          </div>
         </div>
       </div>
-      <div className="mt-20 w-full flex justify-center">
+      {/* <div className="mt-20 w-full flex justify-center">
         <Button
           className="w-full"
           disabled={!fullName || !email || !addressValue}
           onClick={async () => {
             try {
               if (!addressValue) {
-                toast.error('Vui lòng thêm địa chỉ giao hàng');
+                toast.error("Vui lòng thêm địa chỉ giao hàng");
                 return;
               }
 
@@ -98,15 +100,15 @@ const AuthInformationForm = ({
               // });
 
               // setOrderId(res.id);
-              setPage('2');
+              setPage("2");
             } catch (error) {
-              toast.error('Có lỗi xảy ra.');
+              toast.error("Có lỗi xảy ra.");
             }
           }}
         >
           Tiếp tục
         </Button>
-      </div>
+      </div> */}
     </div>
   ) : (
     <div className="flex items-center justify-center">
