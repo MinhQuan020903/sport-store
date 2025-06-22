@@ -29,9 +29,7 @@ export const useChatSocket = ({
   const handleUserConnectedAndDisConnected = (data) => {
     console.log('online user!');
     setOnlineUsers(data);
-    console.log(data, 'dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   };
-  console.log(session, 'sessionsssssssssssssssssssssssssssss');
   const [onlineUsers, setOnlineUsers] = useState();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
