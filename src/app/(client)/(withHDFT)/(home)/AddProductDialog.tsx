@@ -1,28 +1,28 @@
-'use client';
-import React, { useCallback, useEffect, useState } from 'react';
-import DialogCustom from '@/components/ui/dialogCustom';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { useSelectedProduct } from '@/hooks/useSelectedProduct';
-import { parseJSON } from '@/lib/utils';
-import Image from 'next/image';
-import { Controller, useForm } from 'react-hook-form';
-import { Input } from '@nextui-org/react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useCart } from '@/hooks/useCart';
-import toast from 'react-hot-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+"use client";
+import React, { useCallback, useEffect, useState } from "react";
+import DialogCustom from "@/components/ui/dialogCustom";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useSelectedProduct } from "@/hooks/useSelectedProduct";
+import { parseJSON } from "@/lib/utils";
+import Image from "next/image";
+import { Controller, useForm } from "react-hook-form";
+import { Input } from "@nextui-org/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCart } from "@/hooks/useCart";
+import toast from "react-hot-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 // import { FaCheckCircle } from 'react-icons/fa';
 // import { useQueryClient } from '@tanstack/react-query';
 
 const schema = z.object({
   quantity: z
     .string()
-    .refine((val) => val.length > 0, { message: 'Quantity is required' })
+    .refine((val) => val.length > 0, { message: "Quantity is required" })
     .transform(Number)
     .refine((value) => Number.isInteger(value) && value >= 0, {
-      message: 'Quantity must be a nonnegative integer',
+      message: "Quantity must be a nonnegative integer",
     }),
 });
 
@@ -34,11 +34,14 @@ const AddProductDialog = () => {
     onToggleSuccess,
     // onUnselectProduct,
   } = useSelectedProduct();
-  const [selectedSize, setSizeSelected] = useState(null);
+
+  console.log(selectedProduct);
+
+  const [selectedSizeId, setSizeSelectedId] = useState(null);
   const [selectedQuantity, setSelectedQuantity] = useState(null);
   const [showError, setShowError] = useState(false);
   // const [showSuccess, setShowSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!selectedProduct);
   const { onAddToCart } = useCart();
 
   const {
@@ -48,7 +51,7 @@ const AddProductDialog = () => {
     formState: { errors, isValid },
   } = useForm({
     resolver: zodResolver(schema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
   const onSubmit = handleSubmit(async (data) => {
@@ -57,14 +60,14 @@ const AddProductDialog = () => {
     }
 
     // Kiểm tra xem người dùng đã chọn đủ thông tin chưa
-    if (!selectedSize) {
-      return Promise.reject('Size selection is required');
+    if (!selectedSizeId) {
+      return Promise.reject("Size selection is required");
     } else if (!selectedQuantity) {
-      return Promise.reject('Quantity selection is required');
+      return Promise.reject("Quantity selection is required");
     }
 
     if (data.quantity > selectedQuantity) {
-      return Promise.reject('Quantity cannot exceed available stock');
+      return Promise.reject("Quantity cannot exceed available stock");
     }
 
     try {
@@ -73,15 +76,15 @@ const AddProductDialog = () => {
       onToggleSuccess();
       resetFormAndState();
 
-      console.log('quantity: ', data.quantity);
-      console.log('selectedSize: ', selectedSize);
+      console.log("quantity: ", data.quantity);
+      console.log("selectedSizeId: ", selectedSizeId);
 
       await onAddToCart({
         quantity: data.quantity,
-        selectedSizeId: selectedSize,
+        selectedSizeId: selectedSizeId,
       });
     } catch (error) {
-      console.error('Failed to add product to cart:', error);
+      console.error("Failed to add product to cart:", error);
       return Promise.reject(error);
     }
   });
@@ -98,7 +101,7 @@ const AddProductDialog = () => {
 
   const resetFormAndState = useCallback(() => {
     reset();
-    setSizeSelected(null);
+    setSizeSelectedId(null);
     setSelectedQuantity(null);
     // setShowSuccess(false);
     setIsLoading(true);
@@ -125,7 +128,7 @@ const AddProductDialog = () => {
               <Skeleton className="h-20 w-20 rounded-lg" />
             ) : (
               <Image
-                src={parseJSON(selectedProduct.images)[0].url}
+                src={selectedProduct.mainPhotoUrl}
                 alt={selectedProduct?.name}
                 width={60}
                 height={50}
@@ -170,12 +173,12 @@ const AddProductDialog = () => {
                 </div>
               </>
             ) : (
-              selectedProduct.productSizes?.map((size, index) => (
+              selectedProduct.sizes?.map((size, index) => (
                 <div
                   onClick={
                     size.quantity > 0
                       ? () => {
-                          setSizeSelected(size.size);
+                          setSizeSelectedId(size.id);
                           setSelectedQuantity(size.quantity);
                           setShowError(false);
                         }
@@ -184,9 +187,9 @@ const AddProductDialog = () => {
                   key={index}
                   className={`border-2 rounded-md text-center py-2.5 font-medium hover:bg-slate-300 cursor-pointer ${
                     size.quantity > 0
-                      ? 'hover:border-black cursor-pointer'
-                      : 'cursor-not-allowed disabled bg-black/[0.1] opacity-50'
-                  } ${selectedSize === size.size ? 'border-black' : ''} `}
+                      ? "hover:border-black cursor-pointer"
+                      : "cursor-not-allowed disabled bg-black/[0.1] opacity-50"
+                  } ${selectedSizeId === size.id ? "border-black" : ""} `}
                 >
                   {size.size}
                 </div>
@@ -210,7 +213,7 @@ const AddProductDialog = () => {
           </Label>
           <Controller
             control={control}
-            defaultValue={''}
+            defaultValue={""}
             name="quantity"
             render={({ field }) => {
               return (
@@ -232,7 +235,7 @@ const AddProductDialog = () => {
 
           {/* Start In Inventory */}
           <Label className="font-normal italic text-[10px] sm:text-[14px]">
-            Tồn kho: {selectedQuantity}
+            Tồn kho: {selectedQuantity ?? selectedProduct.inStock}
           </Label>
           {/* End In Inventory */}
         </div>
@@ -244,16 +247,16 @@ const AddProductDialog = () => {
               toast.promise(
                 onSubmit(),
                 {
-                  loading: 'Đang thêm vào giỏ hàng ...',
-                  success: 'Thêm vào giỏ hàng thành công!',
+                  loading: "Đang thêm vào giỏ hàng ...",
+                  success: "Thêm vào giỏ hàng thành công!",
                   error: (err) => `${err}`,
                 },
                 {
                   style: {
-                    minWidth: '200px',
-                    minHeight: '50px',
+                    minWidth: "200px",
+                    minHeight: "50px",
                   },
-                  position: 'bottom-right',
+                  position: "bottom-right",
                 }
               );
             }}

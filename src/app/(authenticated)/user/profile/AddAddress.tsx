@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { Select, SelectItem } from '@nextui-org/react';
-import { getRequest, postRequest } from '@/lib/fetch';
-import { Input } from '@/components/ui/input';
-import DialogCustom from '@/components/ui/dialogCustom';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { useSession } from 'next-auth/react';
-import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import Loader from '@/components/Loader';
+import React, { useEffect } from "react";
+import { Select, SelectItem } from "@nextui-org/react";
+import { getRequest, postRequest } from "@/lib/fetch";
+import { Input } from "@/components/ui/input";
+import DialogCustom from "@/components/ui/dialogCustom";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import Loader from "@/components/Loader";
 
 export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
   const session = useSession();
-  const [addressValue, setAddressValue] = React.useState('');
+  const [addressValue, setAddressValue] = React.useState("");
   const [selectedProvince, setSelectedProvince] = React.useState(new Set([]));
   const [selectedDistrict, setSelectedDistrict] = React.useState(new Set([]));
   const [selectedWard, setSelectedWard] = React.useState(new Set([]));
@@ -32,15 +32,15 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
   const [districts, setDistrict] = React.useState([]);
   const [wards, setWard] = React.useState([]);
 
-  const [streetValue, setStreetValue] = React.useState('');
-  const [houseNumberValue, setHouseNumberValue] = React.useState('');
+  const [streetValue, setStreetValue] = React.useState("");
+  const [houseNumberValue, setHouseNumberValue] = React.useState("");
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = React.useState(false);
   useEffect(() => {
     async function getProvince() {
       setIsLoadingProvince(true);
       const res = await getRequest({
-        endPoint: 'https://provinces.open-api.vn/api/p/',
+        endPoint: "https://provinces.open-api.vn/api/p/",
       });
 
       setProvince(res);
@@ -114,7 +114,7 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
     // );
     setIsLoading(true);
     const res = await postRequest({
-      endPoint: '/api/user/address',
+      endPoint: "/api/user/address",
       formData: {
         city: provinceValue,
         district: districtValue,
@@ -126,11 +126,11 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
       isFormData: false,
     });
     setIsLoading(false);
-    if (res?.message === 'success') {
-      toast.success('Thêm địa chỉ thành công');
+    if (res?.message === "success") {
+      toast.success("Thêm địa chỉ thành công");
     }
-    queryClient.refetchQueries(['userInfo', session?.data?.user?.id]);
-    queryClient.refetchQueries(['userAddresses', session?.data?.user?.id]);
+    queryClient.refetchQueries(["userInfo", session?.data?.user?.id]);
+    queryClient.refetchQueries(["userAddresses", session?.data?.user?.id]);
     setIsModalOpen(false);
   };
 
@@ -155,17 +155,16 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
             <div className="flex flex-col gap-y-6 w-[95%] px-1">
               <p className="font-medium">Address</p>
               <Select
-                key={'province'}
-                radius={'sm'}
+                key={"province"}
+                radius={"sm"}
                 label="City, Provice"
                 isInvalid={isProvinceValid || !provinceTouched ? false : true}
                 errorMessage={
                   isProvinceValid || !provinceTouched
-                    ? ''
-                    : 'Please choose your city, province'
+                    ? ""
+                    : "Please choose your city, province"
                 }
                 autoFocus={false}
-                placeholder="Chose city"
                 selectedKeys={selectedProvince}
                 isLoading={isLoadingProvince}
                 onSelectionChange={setSelectedProvince}
@@ -179,14 +178,14 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
                 ))}
               </Select>
               <Select
-                key={'district'}
-                radius={'sm'}
+                key={"district"}
+                radius={"sm"}
                 label="District"
                 isInvalid={isDistrictValid || !districtTouched ? false : true}
                 errorMessage={
                   isDistrictValid || !districtTouched
-                    ? ''
-                    : 'Please choose your district'
+                    ? ""
+                    : "Please choose your district"
                 }
                 autoFocus={false}
                 placeholder="Choose district"
@@ -203,12 +202,12 @@ export const AddAddress = ({ isModalOpen, setIsModalOpen }) => {
                 ))}
               </Select>
               <Select
-                key={'ward'}
-                radius={'sm'}
+                key={"ward"}
+                radius={"sm"}
                 label="Ward"
                 isInvalid={isWardValid || !wardTouched ? false : true}
                 errorMessage={
-                  isWardValid || !wardTouched ? '' : 'Please choose your ward'
+                  isWardValid || !wardTouched ? "" : "Please choose your ward"
                 }
                 autoFocus={false}
                 placeholder="Choose ward"

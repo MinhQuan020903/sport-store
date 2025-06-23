@@ -1,4 +1,4 @@
-import { Conversation, DirectMessage, User } from '@prisma/client';
+import { Conversation, DirectMessage, User } from "@prisma/client";
 
 // export type FullMessageType = DirectMessage & {
 //   sender: User,
@@ -28,7 +28,7 @@ export interface Category {
   updatedAt: string;
 }
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   description: string;

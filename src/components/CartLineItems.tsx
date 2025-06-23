@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import { cn, currencyFormat } from '@/lib/utils';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useCart } from '@/hooks/useCart';
-import { Minus, PlusIcon, TrashIcon } from 'lucide-react';
-import * as Tooltip from '@radix-ui/react-tooltip';
-import { useProductSize } from '@/hooks/useProductSize';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { cn, currencyFormat } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useCart } from "@/hooks/useCart";
+import { Minus, PlusIcon, TrashIcon } from "lucide-react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { useProductSize } from "@/hooks/useProductSize";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function CartLineItems({
   items,
@@ -67,13 +67,13 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
 
   // Fetch size info using productSizeId
   const { data: productSize, isLoading: isSizeLoading } = useQuery({
-    queryKey: ['productSize', item.productSizeId],
+    queryKey: ["productSize", item.productSizeId],
     queryFn: async () => {
       try {
         // Use the fetchProductSizeById function from the hook
         return await fetchProductSizeById(item.productSizeId);
       } catch (error) {
-        console.error('Error fetching product size:', error);
+        console.error("Error fetching product size:", error);
         return null;
       }
     },
@@ -118,10 +118,10 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
         onCheck(itemKey, true, updatedItem, updatedItem.quantity);
       }
 
-      queryClient.invalidateQueries(['useCart']);
+      queryClient.invalidateQueries(["useCart"]);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error increasing item quantity:', error);
+      console.error("Error increasing item quantity:", error);
       setIsLoading(false);
     }
   };
@@ -154,10 +154,10 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
         onCheck(itemKey, true, updatedItem, newQuantity);
       }
 
-      queryClient.invalidateQueries(['useCart']);
+      queryClient.invalidateQueries(["useCart"]);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error decreasing item quantity:', error);
+      console.error("Error decreasing item quantity:", error);
       setIsLoading(false);
     }
   };
@@ -185,12 +185,12 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
           onCheck(itemKey, true, updatedItem, newQuantity);
         }
 
-        queryClient.invalidateQueries(['useCart']);
+        queryClient.invalidateQueries(["useCart"]);
       }
 
       setIsLoading(false);
     } catch (error) {
-      console.error('Error updating item quantity:', error);
+      console.error("Error updating item quantity:", error);
       setIsLoading(false);
     }
   };
@@ -219,10 +219,10 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
       }
 
       onCheck(itemKey, false, item, 0);
-      queryClient.invalidateQueries(['useCart']);
+      queryClient.invalidateQueries(["useCart"]);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error("Error deleting item:", error);
       setIsLoading(false);
     }
   };
@@ -234,7 +234,7 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
     item.productPhotoUrl ||
     (item.data &&
       (item.data.mainPhotoUrl ||
-        (typeof item.data.thumbnail === 'object'
+        (typeof item.data.thumbnail === "object"
           ? item.data.thumbnail.url
           : item.data.thumbnail)));
 
@@ -255,8 +255,8 @@ const CartItem = ({ item, isChecked, onCheck, enableCheck }) => {
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
             <Image
-              src={productImage || '/placeholder-product.jpg'}
-              alt={productName || 'Product'}
+              src={productImage || "/placeholder-product.jpg"}
+              alt={productName || "Product"}
               fill
               className="absolute object-cover"
               sizes="64px"

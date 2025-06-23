@@ -1,43 +1,55 @@
-'use client';
+"use client";
 
-import { AddAddress } from '@/app/(authenticated)/user/profile/AddAddress';
-import Loader from '@/components/Loader';
-import { SelectAddress } from '@/components/select-address';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useUser } from '@/hooks/useUser';
-import { Select, SelectItem } from '@nextui-org/react';
-import { useQuery } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import React, { useEffect, useState } from 'react';
+import Loader from "@/components/Loader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useOrder from "@/hooks/useOrder";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { AddressForm } from "./AddressForm";
 
 const AuthInformationForm = ({
   setPage,
   user,
-  addresses,
   setUserFullname,
   setUserAddress,
   setUserEmail,
+  email,
+  fullName,
+  checkedItems,
+  setOrderId,
+  userAddress,
 }) => {
-  const [addressValue, setAddressValue] = useState(
-    addresses?.[0]?.addressValue
-  );
-  const [selectedType, setSelectedType] = React.useState(
-    new Set([addresses?.[0]?.addressValue?.toString()])
-  );
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [fullName, setFullName] = useState(user?.name);
-  const [email, setEmail] = useState(user?.email);
-  useEffect(() => {
-    if (selectedType.size > 0) {
-      const noiThatValueArray = Array.from(selectedType);
-      setUserAddress(noiThatValueArray?.[0]);
+  const { onCreateOrder } = useOrder();
+
+  const handleAddressComplete = async (newAddress: string) => {
+    setUserAddress(newAddress);
+
+    try {
+      if (!newAddress) {
+        toast.error("Vui lòng thêm địa chỉ giao hàng");
+        return;
+      }
+
+      var res = await onCreateOrder({
+        shippingType: "default",
+        cartItemIds: Object.keys(checkedItems),
+        receiverName: fullName,
+        receiverEmail: email,
+        detailAddress: newAddress,
+      });
+
+      setOrderId(res.id);
+      setPage("2");
+    } catch (error) {
+      toast.error("Có lỗi xảy ra.");
     }
-  }, [selectedType]);
-  return user && addresses ? (
+  };
+
+  return user ? (
     <div className="flex flex-col h-full justify-between">
-      <div className="w-[95%] h-full flex flex-col gap-y-6">
+      <div className="w-full h-full flex flex-col gap-y-6">
         <Input
           placeholder="Nhập đầy đủ họ tên"
           value={fullName}
@@ -49,64 +61,54 @@ const AuthInformationForm = ({
         <Input
           placeholder="Nhập email"
           value={email}
-          disabled
           onChange={(e) => {
             setUserEmail(e.target.value);
           }}
           label="Email"
         />
 
-        {/* <SelectAddress
-          addressValue={addressValue}
-          setAddressValue={setAddressValue}
-        /> */}
+        <div className="w-full flex flex-col">
+          <Label>Địa chỉ</Label>
 
-        <Label>Địa chỉ</Label>
-        <Select
-          key={'method'}
-          radius={'md'}
-          label="Địa chỉ"
-          disallowEmptySelection={true}
-          autoFocus={false}
-          placeholder="Select address"
-          selectedKeys={selectedType}
-          onSelectionChange={(keys) => {
-            setSelectedType(keys);
-          }}
-          className="max-w-xs lg:max-w-lg"
-        >
-          {addresses?.map((item) => {
-            return (
-              <SelectItem key={item?.addressValue} value={item.addressValue}>
-                {item?.addressValue}
-              </SelectItem>
-            );
-          })}
-        </Select>
-        <Button
-          disabled={!addressValue || !fullName || !email}
-          className="w-32"
-          onClick={() => {
-            setIsAddressModalOpen(true);
-          }}
-        >
-          Thêm địa chỉ
-        </Button>
-        <AddAddress
-          isModalOpen={isAddressModalOpen}
-          setIsModalOpen={setIsAddressModalOpen}
-        />
+          <div className="w-full flex flex-col mt-2">
+            <div className="flex justify-between mb-2">
+              <h3 className="font-semibold">
+                {userAddress ? "Cập nhật địa chỉ" : "Thêm địa chỉ"}
+              </h3>
+            </div>
+            <AddressForm
+              onComplete={handleAddressComplete}
+              enable={!!fullName || !!email}
+            />
+          </div>
+        </div>
       </div>
-      <div className="mt-20 w-full flex justify-center">
+      {/* <div className="mt-20 w-full flex justify-center">
         <Button
-          className="w-32"
-          onClick={() => {
-            setPage('2');
+          className="w-full"
+          disabled={!fullName || !email || !addressValue}
+          onClick={async () => {
+            try {
+              if (!addressValue) {
+                toast.error("Vui lòng thêm địa chỉ giao hàng");
+                return;
+              }
+
+              // var res = await onCreateOrder({
+              //   shippingType: 'default',
+              //   cartItemIds: Object.keys(checkedItems),
+              // });
+
+              // setOrderId(res.id);
+              setPage("2");
+            } catch (error) {
+              toast.error("Có lỗi xảy ra.");
+            }
           }}
         >
           Tiếp tục
         </Button>
-      </div>
+      </div> */}
     </div>
   ) : (
     <div className="flex items-center justify-center">

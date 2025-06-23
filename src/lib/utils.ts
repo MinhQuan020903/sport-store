@@ -17,7 +17,7 @@ export function checkEmail(email) {
 }
 
 export function currencyFormat(num) {
-  return `${numeral(num).format('0,00')} USD`;
+  return `${numeral(num).format('0,00')} $`;
 }
 export function formatBytes(
   bytes: number,
